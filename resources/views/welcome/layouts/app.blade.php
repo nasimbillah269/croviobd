@@ -74,6 +74,14 @@
 .singlPrice {
     padding: 20px 0;
 }
+
+.proudctVeiwDescription ul {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+.stockAvailable {
+    width: 250px;
+}
         
             .main-container {
                 min-height: 700px;
