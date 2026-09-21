@@ -1,0 +1,215 @@
+@extends('admin.layouts.app')
+@section('title')
+<title>Comments List - {{general()->title}} | {{general()->subtitle}}</title>
+@endsection
+
+@push('css')
+<style type="text/css">
+  .commentauthor img{
+    float: left;
+    margin-right: 10px;
+    margin-top: 1px;
+    width: 40px;
+  }
+  .table-responsive table tr.inactive {
+    background: #ffcece;
+  }
+</style>
+@endpush
+@section('contents')
+
+
+<div class="content-header row">
+    <div class="content-header-left col-md-6 col-12 mb-2">
+     <h3 class="content-header-title mb-0">Comments List</h3>
+     <div class="row breadcrumbs-top">
+       <div class="breadcrumb-wrapper col-12">
+         <ol class="breadcrumb">
+           <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Dashboard </a>
+           </li>
+           <li class="breadcrumb-item active">Comments List</li>
+         </ol>
+       </div>
+     </div>
+   </div>
+   <div class="content-header-right col-md-6 col-12 mb-md-0 mb-2">
+     <div class="btn-group float-md-right" role="group" aria-label="Button group with nested dropdown">
+     	@isset(json_decode(Auth::user()->permission->permission, true)['postsComment']['add'])
+       	<a class="btn btn-outline-primary" href="{{route('admin.postsCommentsCreate',$post->id)}}">Add Comment</a>
+      @endisset
+       	<a class="btn btn-outline-primary reloadPage1" href="{{route('admin.postsComments',$post->id)}}">
+       		<i class="fa-solid fa-rotate"></i>
+       	</a>
+     </div>
+   </div>
+</div>
+ 
+	
+
+ <div class="content-body"><!-- Basic Elements start -->
+	 <section class="basic-elements">
+	     <div class="row">
+	         <div class="col-md-12">
+         		@include('admin.alerts')
+         		<div class="card">
+     				<div class="card-content">
+ 						<div class="card-body">
+ 							<div id="accordion">
+							    <div class="card-header collapsed" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo" id="headingTwo" style="background: #f5f7fa;padding: 10px;cursor: pointer;border: 1px solid #00b5b8;">
+							          Search click Here..
+							    </div>
+							    <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordion" style="border: 1px solid #00b5b8;border-top: 0;">
+							      <div class="card-body">
+							       	
+							       	<form action="{{route('admin.postsComments',$post->id)}}">
+							       		<div class="row">
+							       			<div class="col-md-12 mb-0">
+						       					<div class="input-group">
+				                             		<input type="text" name="search" value="{{$r->search?$r->search:''}}" placeholder="Comments Title, email, website" class="form-control {{$errors->has('search')?'error':''}}">
+				                             		<button type="submit" class="btn btn-success rounded-0">Search</button>
+		                         				</div>
+							       			</div>
+							       		</div>
+							       </form>
+
+							      </div>
+							    </div>
+							</div>
+ 						</div>
+     				</div>
+         		</div>
+
+	             <div class="card">
+	             	<div class="card-header " style="border-bottom: 1px solid #e3ebf3;">
+					 	<h4 class="card-title">Categories List</h4>
+				 	</div>
+	                 <div class="card-content">
+	                     <div class="card-body">
+	                     	<table class="table table-bordered">
+	                     		<tr>
+	                     			<td>
+	                     				<b>Post: </b><a href="{{route('blogView',$post->slug)}}" target="_blank">{{$post->name}}</a>
+	                     			</td>
+	                     			<td>
+	                     				<i class="fa fa-comments"></i> Comments ({{$post->comments}})
+	                     			</td>
+	                     		</tr>
+	                     	</table>
+	                     	<form action="{{route('admin.postsComments',$post->id)}}">
+	                     	<div class="row">
+                     			<div class="col-md-4">
+                     				<div class="input-group mb-1">
+                     					<select class="form-control form-control-sm rounded-0" name="action" required="">
+                     						<option value="">Select Action</option>
+                     						@isset(json_decode(Auth::user()->permission->permission, true)['postsComment']['edit'])
+                     						<option value="1">Comment Approve</option>
+                     						<option value="2">Comment Unapprove</option>
+                     						<option value="3">Comment Feature</option>
+                     						<option value="4">Comment Unfeature</option>
+                     						@endisset
+                     						@isset(json_decode(Auth::user()->permission->permission, true)['postsComment']['delete'])
+                     						<option value="5">Comment Delete</option>
+                     						@endisset
+                     					</select>
+                     					<button class="btn btn-sm btn-primary rounded-0" onclick="return confirm('Are You Want To Action?')">Action</button>
+                     				</div>
+                     			</div>
+                     		</div>
+		                     <div class="table-responsive">
+
+
+		                     	<table class="table table-striped table-bordered table-hover" >
+								    <thead>
+								        <tr>
+								            <th width="5%"></th>
+								            <th width="20%">Author</th>
+								            <th>Comments</th>
+								            <th width="25%">Action</th>
+								        </tr>
+								    </thead>
+								    <tbody>
+								        @foreach($comments as $i=>$comment)
+								        <tr class="{{$comment->status=='inactive'?'inactive':''}}">
+								            <td>
+								              <input class="checkbox" type="checkbox" name="checkid[]" value="{{$comment->id}}"> 
+								            </td>
+								            <td class="commentauthor">
+								            @if($comment->user)
+								            <span><img src="{{asset($comment->user->image())}}"></span>
+								            @else
+								            <span><img src="{{asset('medies/profile.png')}}"></span>
+								            @endif
+
+								            @if($comment->website==null)
+								            <span>{{$comment->name}}</span>
+								            @else
+								            <a href="//{{$comment->website}}" rel="nofollow" target="_blank">{{$comment->name}}</a>
+								            @endif            
+								            <a href="mailto:{{$comment->email}}">{{$comment->email}}</a>
+								            @isset(json_decode(Auth::user()->permission->permission, true)['postsComment']['edit'])
+								            <br>
+								            @if($comment->status=='active')
+								           <span><i class="fa fa-check" style="color: #1ab394;"></i></span>
+								           <a href="{{route('admin.postsCommentsStatus',$comment->id)}}" class="badge btn-danger" style="color: black !important;">Unapprove</a>
+								           @else
+								           <span><i class="fa fa-times" style="color: #ed5565;"></i></span>
+								           <a href="{{route('admin.postsCommentsStatus',$comment->id)}}"  class="badge btn-success">Approved</a>
+								           @endif
+								          	@endisset
+								            </td>
+								            <td>
+								            <span>
+								            {!!$comment->content!!}
+								            </span>
+								            </td>
+								            <td class="center">
+								            <a href="{{route('admin.postsCommentsEdit',$comment->id)}}" class="btn btn-sm btn-info">Edit</a>
+								            @isset(json_decode(Auth::user()->permission->permission, true)['postsComment']['edit'])
+								            <a href="{{route('admin.postsCommentsReplay',$comment->id)}}" class="btn btn-sm btn-info">Replay</a>
+								            @endisset
+
+								            @isset(json_decode(Auth::user()->permission->permission, true)['postsComment']['delete'])
+								            <a href="#deleteModal{{$comment->id}}" class="btn btn-sm btn-danger" data-toggle="modal">Delete</a>
+								            <div class="modal fade" id="deleteModal{{$comment->id}}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+								                <div class="modal-dialog" role="document">
+								                  <div class="modal-content">
+								                    <div class="modal-header">
+								                      <h5 class="modal-title" id="exampleModalLabel">Confermation</h5>
+								                    </div>
+								                    <div class="modal-body">
+								                      Are Your Want To Delete
+								                    </div>
+								                    <div class="modal-footer">
+								                      <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+								                      <a href="{{route('admin.postsCommentsDelete',$comment->id)}}" class="btn btn-primary">Yes</a>
+								                    </div>
+								                  </div>
+								                </div>
+								              </div>
+								             @endisset
+								              <br>
+								              <span>{{$comment->created_at->format('d-m-Y h:i A')}}</span>       
+								            </td>
+								        </tr>
+								        @endforeach
+								    </tbody>
+								</table>
+								{{$comments->links('pagination')}}
+		                     </div>
+		                   	</form>
+	                     </div>
+	                 </div>
+	             </div>
+
+	         </div>
+	     </div>
+	 </section>
+	 <!-- Basic Inputs end -->
+</div>
+
+
+
+@endsection
+@push('js')
+
+@endpush

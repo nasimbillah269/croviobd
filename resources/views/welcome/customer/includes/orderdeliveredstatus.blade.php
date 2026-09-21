@@ -1,0 +1,44 @@
+<style>
+     .statustimeline:before {
+    background: linear-gradient(to right, #04a150 0%,#04a150 100%);
+    }
+</style>
+                <ul>
+                    <li>
+                        <span class="statuscheckok">
+                            <span style="display: inline-block;background: white;">
+                            <i class="fa fa-check" aria-hidden="true"></i>
+                            </span>
+                        </span>
+                        <span>Placed Order</span>
+                        <span class="time">{{$order->created_at->format('Y-m-d h:i A')}}</span>
+                    </li>
+                   
+                    <li>
+                        <span class="statuscheckok">
+                            <span style="display: inline-block;background: white;">
+                            <i class="fa fa-check" aria-hidden="true"></i>
+                            </span>
+                        </span>
+                        <span>Confimed</span>
+                        <span class="time">{{Carbon\Carbon::parse($order->confirmed_at)->format('Y-m-d h:i A')}}</span>
+                    </li>
+                    <li>
+                        <span class="statuscheckok">
+                            <span style="display: inline-block;background: white;">
+                            <i class="fa fa-check" aria-hidden="true"></i>
+                            </span>
+                        </span>
+                        <span>Shipped</span>
+                        <span class="time">{{Carbon\Carbon::parse($order->shipped_at)->format('Y-m-d h:i A')}}</span>
+                    </li>
+                    <li>
+                        <span class="statuscheckok">
+                            <span style="display: inline-block;background: white;">
+                             <i class="fa fa-check" aria-hidden="true"></i>
+                             </span>
+                        </span>
+                        <span>Delivered</span>
+                        <span class="time">{{Carbon\Carbon::parse($order->delivered_at)->format('Y-m-d h:i A')}}</span>
+                    </li>
+                </ul>
