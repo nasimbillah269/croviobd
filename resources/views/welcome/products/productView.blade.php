@@ -150,8 +150,10 @@
         text-decoration: line-through;
     }
     .variationSelectedName{
-        font-weight: 400;
-        color: #555;
+        font-size: 20px;
+        font-weight: 700;
+        color: #222;
+        margin-left: 4px;
     }
     .addcartDisabled{
         opacity: 0.5;
