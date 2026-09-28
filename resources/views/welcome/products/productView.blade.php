@@ -145,6 +145,14 @@
         background: #fdecec;
         border: 1px solid #f5c2c2;
     }
+    .variationOption.variationDisabled{
+        opacity: 0.35;
+        text-decoration: line-through;
+    }
+    .variationSelectedName{
+        font-weight: 400;
+        color: #555;
+    }
     .addcartDisabled{
         opacity: 0.5;
         pointer-events: none;
@@ -188,6 +196,11 @@
                                 @foreach($product->galleryFiles as $gall)
                                     <a href="{{asset($gall->image())}}"><img class="xzoom-gallery4"  src="{{asset($gall->image())}}" title="The description goes here"></a>
                                 @endforeach
+                                @if($product->variation_status && $product->productAttibutes->count() > 0)
+                                @foreach(collect($product->variationSkuMap())->pluck('image')->filter()->unique() as $variantImage)
+                                    <a href="{{$variantImage}}"><img class="xzoom-gallery4"  src="{{$variantImage}}" title="{{$product->name}}"></a>
+                                @endforeach
+                                @endif
                           </div>
                           
 
@@ -268,13 +281,14 @@
                                 @php
                                     $isColorGroup = $group->attribute->view==2 || str_contains(strtolower($group->attribute->name),'colo');
                                 @endphp
-                                <div class="variationGroup">
-                                    <label>{{ucfirst($group->attribute->name)}}</label>
+                                <div class="variationGroup" data-color-group="{{$isColorGroup?1:0}}">
+                                    <label>{{ucfirst($group->attribute->name)}}: <span class="variationSelectedName"></span></label>
                                     <div class="variationOptions">
                                         @foreach($product->productAttibutes->where('reff_id',$group->reff_id) as $item)
                                         @if($item->attributeItem)
                                         <span class="variationOption @if($isColorGroup) variationColor @elseif($group->attribute->view==3) variationImage @else variationText @endif"
                                         data-item-id="{{$item->attributeItem->id}}"
+                                        data-name="{{$item->attributeItem->name}}"
                                         title="{{$item->attributeItem->name}}"
                                         @if($isColorGroup)
                                         style="background-color: {{$item->value_1?:($item->attributeItem->icon?:strtolower($item->attributeItem->name))}};"
@@ -369,31 +383,108 @@
                                     });
                                 }
 
+                                var skuList = [];
+                                for(var k in variationMap){ skuList.push(variationMap[k]); }
+
+                                groups = Array.prototype.slice.call(groups);
+
+                                function activeId(g){
+                                    var sel = g.querySelector('.variationOption.active');
+                                    return sel ? sel.getAttribute('data-item-id') : null;
+                                }
+
+                                //SKU contains every selected item of the other groups
+                                function compatible(sku, exceptGroup){
+                                    return groups.every(function(g){
+                                        if(g===exceptGroup) return true;
+                                        var id = activeId(g);
+                                        return !id || sku.items.indexOf(id)!==-1;
+                                    });
+                                }
+
+                                //Disable options not available with current selection,
+                                //hide a group (e.g. Size) when the selected Color has no item of it
+                                function refreshAvailability(){
+                                    for(var pass=0; pass<groups.length; pass++){
+                                        var changed = false;
+                                        groups.forEach(function(g){
+                                            var options = g.querySelectorAll('.variationOption');
+                                            var candidates = skuList.filter(function(sku){ return compatible(sku, g); });
+                                            var groupNeeded = false;
+                                            options.forEach(function(opt){
+                                                var id = opt.getAttribute('data-item-id');
+                                                var available = candidates.some(function(sku){ return sku.items.indexOf(id)!==-1; });
+                                                if(available) groupNeeded = true;
+                                                opt.classList.toggle('variationDisabled', !available);
+                                                if(!available && opt.classList.contains('active')){
+                                                    opt.classList.remove('active');
+                                                    changed = true;
+                                                }
+                                            });
+                                            g.style.display = groupNeeded ? '' : 'none';
+                                        });
+                                        if(!changed) break;
+                                    }
+                                }
+
                                 function currentSelection(){
-                                    var key = productId;
-                                    var complete = true;
+                                    var ids = [];
+                                    var missing = false;
+                                    groups.forEach(function(g){
+                                        var id = activeId(g);
+                                        if(id){ ids.push(id); }
+                                        else if(g.style.display!=='none'){ missing = true; }
+                                    });
+                                    var combo = null;
+                                    if(ids.length){
+                                        combo = skuList.filter(function(sku){
+                                            return sku.items.length===ids.length && ids.every(function(id){ return sku.items.indexOf(id)!==-1; });
+                                        })[0] || null;
+                                    }
+                                    return {combo:combo, missing:missing};
+                                }
+
+                                var mainImg = document.getElementById('xzoom-fancy');
+                                var defaultImage = mainImg ? mainImg.getAttribute('src') : '';
+
+                                function setMainImage(url){
+                                    if(!mainImg || mainImg.getAttribute('src')===url) return;
+                                    mainImg.setAttribute('src', url);
+                                    mainImg.setAttribute('xoriginal', url);
+                                    document.querySelectorAll('.xzoom-thumbs .xzoom-gallery4').forEach(function(t){
+                                        t.classList.toggle('xactive', t.parentNode.getAttribute('href')===url);
+                                    });
+                                }
+
+                                function updateSelectedNames(){
                                     groups.forEach(function(g){
                                         var sel = g.querySelector('.variationOption.active');
-                                        if(sel){
-                                            key += sel.getAttribute('data-item-id');
-                                        }else{
-                                            complete = false;
-                                        }
+                                        var nameEl = g.querySelector('.variationSelectedName');
+                                        if(nameEl){ nameEl.textContent = sel ? sel.getAttribute('data-name') : ''; }
                                     });
-                                    return {key:key, complete:complete};
+                                }
+
+                                function updateImage(){
+                                    var combo = currentSelection().combo;
+                                    if(combo && combo.image){ setMainImage(combo.image); return; }
+
+                                    var colorGroup = box.querySelector('.variationGroup[data-color-group="1"]');
+                                    var colorId = colorGroup ? activeId(colorGroup) : null;
+                                    if(!colorId) return;
+                                    for(var i=0; i<skuList.length; i++){
+                                        if(skuList[i].image && skuList[i].items.indexOf(colorId)!==-1){ setMainImage(skuList[i].image); return; }
+                                    }
+                                    setMainImage(defaultImage);
                                 }
 
                                 function updateUI(){
+                                    refreshAvailability();
+
                                     var sel = currentSelection();
+                                    var combo = sel.combo;
 
-                                    if(!sel.complete){
-                                        skuInput.value='';
-                                        msgEl.style.display='none';
-                                        setAddButtonsEnabled(false);
-                                        return;
-                                    }
-
-                                    var combo = variationMap[sel.key];
+                                    updateSelectedNames();
+                                    updateImage();
 
                                     if(combo){
                                         skuInput.value = combo.sku_id;
@@ -413,6 +504,10 @@
                                             msgEl.textContent = 'This option is out of stock';
                                             msgEl.style.display = 'block';
                                         }
+                                    }else if(sel.missing){
+                                        skuInput.value='';
+                                        msgEl.style.display='none';
+                                        setAddButtonsEnabled(false);
                                     }else{
                                         skuInput.value='';
                                         msgEl.textContent = 'This combination is not available';
@@ -428,6 +523,14 @@
                                     }
                                     options.forEach(function(opt){
                                         opt.addEventListener('click', function(){
+                                            //Unavailable option clicked: start fresh from this option
+                                            if(opt.classList.contains('variationDisabled')){
+                                                groups.forEach(function(other){
+                                                    if(other!==g){
+                                                        other.querySelectorAll('.variationOption').forEach(function(o){ o.classList.remove('active'); });
+                                                    }
+                                                });
+                                            }
                                             options.forEach(function(o){ o.classList.remove('active'); });
                                             opt.classList.add('active');
                                             updateUI();

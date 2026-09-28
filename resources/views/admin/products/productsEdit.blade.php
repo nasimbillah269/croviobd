@@ -673,20 +673,20 @@
             var url =$(this).data('url');
             var form =$('.mainformDATA');
             var data =form.serialize();
-            var valid =true;
+            var valid =false;
 
+            //At least one item (e.g. only Color) is enough
             $('.variationItemsValue').each(function(){
-              if($(this).val()==''){
-                $(this).addClass('error');
-                valid =false;
-              }else{
-                $(this).removeClass('error');
+              if($(this).val()!=''){
+                valid =true;
               }
             });
 
             if(!valid){
+              $('.variationItemsValue').addClass('error');
               return;
             }
+            $('.variationItemsValue').removeClass('error');
 
             $.ajax({
               url:url,

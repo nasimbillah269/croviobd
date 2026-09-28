@@ -234,11 +234,14 @@ class Post extends Model
 
         foreach($this->productSkus->groupBy('sku_id') as $skuId=>$rows){
             $first = $rows->first();
+            $imageRow = $rows->sortBy('id')->first(function($row){ return $row->skuImageFile; });
 
             $map[$skuId] = [
                 'sku_id'   => $skuId,
                 'price'    => ($first->value_1!==null && $first->value_1!=='') ? (float)$first->value_1 : (float)$this->offerPrice(),
                 'quantity' => $first->duration!==null ? (int)$first->duration : 0,
+                'image'    => $imageRow ? asset($imageRow->skuImageFile->file_url) : null,
+                'items'    => $rows->pluck('parent_id')->map(function($id){ return (string)$id; })->values(),
             ];
         }
 

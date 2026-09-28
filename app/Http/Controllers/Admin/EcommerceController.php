@@ -662,16 +662,16 @@ class EcommerceController extends Controller
 
         if($column=='variationItemsAdd'){
 
-          $hasEmptySelection =false;
+          $hasSelection =false;
           if($r->variationItems){
             foreach($r->variationItems as $vi){
-              if($vi===null || $vi===''){
-                $hasEmptySelection =true;
+              if($vi!==null && $vi!==''){
+                $hasSelection =true;
               }
             }
           }
 
-          if($r->variationItems && !$hasEmptySelection){
+          if($hasSelection){
 
             $uniIDS =$product->id;
             for ($i=0; $i < count($r->variationItems); $i++) {
@@ -706,7 +706,7 @@ class EcommerceController extends Controller
             }
 
           }else{
-            $attriMessage ='<span class="text-danger">Please Select All Variation Items (Color, Size etc.) Before Adding!!</span>';
+            $attriMessage ='<span class="text-danger">Please Select At Least One Variation Item (Color, Size etc.) Before Adding!!</span>';
           }
 
           $viewData = view('admin.products.includes.productVariation',compact('product','attriMessage'))->render();
@@ -723,7 +723,20 @@ class EcommerceController extends Controller
           $oldSkuId =$r->skuID;
           $rows =PostAttribute::where('type',4)->where('src_id',$product->id)->where('sku_id',$oldSkuId)->get();
 
-          if($rows->count() > 0 && $r->variationItems){
+          $hasSelection =false;
+          if($r->variationItems){
+            foreach($r->variationItems as $vi){
+              if($vi!==null && $vi!==''){
+                $hasSelection =true;
+              }
+            }
+          }
+
+          if(!$hasSelection){
+            $attriMessage ='<span class="text-danger">At Least One Variation Item Required!!</span>';
+          }
+
+          if($rows->count() > 0 && $hasSelection){
 
             $newUniIDS =$product->id;
             for ($i=0; $i < count($r->variationItems); $i++) {
@@ -736,19 +749,47 @@ class EcommerceController extends Controller
               $attriMessage ='<span class="text-danger">This Combination Already Exists!!</span>';
             }else{
 
+              $primaryRow =$rows->sortBy('id')->first();
+              $keptRowIds =[];
+
               for ($i=0; $i < count($r->variationItems); $i++) {
                 if($r->variationItems[$i]!=null){
 
                     $attri =Attribute::where('type',9)->where('parent_id','<>',null)->find($r->variationItems[$i]);
                     if($attri){
                       $row =$rows->firstWhere('reff_id',$attri->parent_id);
-                      if($row){
-                        $row->parent_id =$attri->id;
-                        $row->sku_id =$newUniIDS;
-                        $row->save();
+                      if(!$row){
+                        //New group item (e.g. Size added to a Color only SKU)
+                        $row =new PostAttribute();
+                        $row->src_id=$product->id;
+                        $row->reff_id=$attri->parent_id;
+                        $row->type=4;
+                        $row->value_1=$primaryRow->value_1;
+                        $row->duration=$primaryRow->duration;
+                        $row->addedby_id=auth::id();
                       }
+                      $row->parent_id =$attri->id;
+                      $row->sku_id =$newUniIDS;
+                      $row->save();
+                      $keptRowIds[] =$row->id;
                     }
                 }
+              }
+
+              //Remove cleared group items, keep SKU image on a remaining row
+              $removeRows =$rows->whereNotIn('id',$keptRowIds);
+              $imageKeeper =PostAttribute::whereIn('id',$keptRowIds)->orderBy('id')->first();
+              foreach($removeRows as $removeRow){
+                if($removeRow->skuImageFile && $imageKeeper && !$imageKeeper->skuImageFile){
+                  $removeRow->skuImageFile->src_id =$imageKeeper->id;
+                  $removeRow->skuImageFile->save();
+                }elseif($removeRow->skuImageFile){
+                  if(File::exists(public_path($removeRow->skuImageFile->file_url))){
+                      File::delete(public_path($removeRow->skuImageFile->file_url));
+                  }
+                  $removeRow->skuImageFile->delete();
+                }
+                $removeRow->delete();
               }
 
             }
