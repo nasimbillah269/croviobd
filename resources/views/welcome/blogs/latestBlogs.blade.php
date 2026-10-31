@@ -17,39 +17,6 @@
 
 @section('contents')
 
- <section class="w3l-about-breadcrumb">
-     <div class="breadcrumb-bg breadcrumb-bg-about py-5">
-         <div class="container py-lg-5 py-md-3">
-             <h2 class="title">Blog posts </h2>
-         </div>
-     </div>
- </section>
- <section class="w3l-blog-single">
-	 <div class="single blog py-5">
-	   <div class="container py-lg-5 py-md-4 py-2">
-		 <div class="d-grid grid-colunm-2">
-		   <!-- left side blog post content -->
-		   <div class="single-left">
-
-		   	 @foreach($posts as $post)
-			 @include(general()->theme.'.blogs.includes.blogGrid')
-			 @endforeach
-
-			 <!-- pagination -->
-			 {{$posts->links(general()->theme.'.blogs.pagination')}}
-
-		   </div>
-		   <!-- left side blog post content -->
-  
-		   <!-- right side bar -->
-		   <div class="right-side-bar">
-		   	@include(general()->theme.'.blogs.includes.sideBar')
-		   </div>
-		   <!-- //right side bar -->
-		 </div>
-	   </div>
-	 </div>
-   </section>
-
+@include(general()->theme.'.blogs.includes.blogList',['title'=>'Blog Posts'])
 
 @endsection @push('js') @endpush

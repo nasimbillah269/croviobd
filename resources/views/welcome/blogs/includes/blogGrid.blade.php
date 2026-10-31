@@ -1,29 +1,18 @@
-<div class="single-left1">
-	 <div class="blg-img">
-   <a href="{{route('blogView',$post->slug?:'no-title')}}"><img src="{{asset($post->image())}}" alt=" " class="img-responsive img-fluid" />
-   <div class="bl-top">
-	 <h4>{{$post->created_at->format('d M')}} </h4>
-  </div></a>
- </div>
- 
-   <div class="btom-cont">
-	 <h5 class="card-title"><a href="{{route('blogView',$post->slug?:'no-title')}}">{{$post->name}}</a></h5>
-	 <ul class="admin-post">
-	   <li>
-	   	@if($post->user)
-	     <a href="{{route('blogAuthor',[$post->user->id,Str::slug($post->user->name)])}}">
-	    @else
-	     <a href="javascript:void(0)">
-	    @endif
-		 	<span class="fa fa-user"></span> Posted by {{$post->user?$post->user->name:'No Author'}} 
-		 </a>
-	   </li>
-	   <li>
-		 <a href="{{route('blogView',$post->slug?:'no-title')}}"><span class="fa fa-comments-o"></span>Comments ({{$post->postComments->count()}}) </a>
-	   </li>
-	 </ul>
-	 <p class="">{{$post->short_description}}</p>
-	 <a href="{{route('blogView',$post->slug?:'no-title')}}" class="btn btn-style btn-primary mt-4">Read More </a>
-	
-   </div>
- </div>
+<article class="blog-card">
+	<a href="{{route('blogView',$post->slug?:'no-title')}}" class="blog-card-img">
+		<img src="{{asset($post->image())}}" alt="{{$post->name}}" loading="lazy" />
+		<span class="blog-card-date"><b>{{$post->created_at->format('d')}}</b>{{$post->created_at->format('M')}}</span>
+	</a>
+	<div class="blog-card-body">
+		<div class="blog-card-meta">
+			@if($post->user)
+			<a href="{{route('blogAuthor',[$post->user->id,Str::slug($post->user->name)])}}"><i class="fa fa-user"></i>{{$post->user->name}}</a>
+			@else
+			<span><i class="fa fa-user"></i>Admin</span>
+			@endif
+		</div>
+		<h3 class="blog-card-title"><a href="{{route('blogView',$post->slug?:'no-title')}}">{{$post->name}}</a></h3>
+		<p class="blog-card-text">{{Str::limit(strip_tags($post->short_description),140)}}</p>
+		<a href="{{route('blogView',$post->slug?:'no-title')}}" class="blog-card-btn">Read More <i class="fa fa-arrow-right"></i></a>
+	</div>
+</article>

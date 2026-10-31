@@ -340,7 +340,12 @@ class WelcomeController extends Controller
       if(!$post){
         return abort('404');
       }
-      return view($this->device.'blogs.blogView',compact('post'));
+
+      $prevPost =Post::where('type',1)->where('status','active')->where('id','<',$post->id)->orderBy('id','desc')->first();
+      $nextPost =Post::where('type',1)->where('status','active')->where('id','>',$post->id)->orderBy('id','asc')->first();
+      $relatedPosts =Post::latest()->where('type',1)->where('status','active')->where('id','!=',$post->id)->limit(3)->get();
+
+      return view($this->device.'blogs.blogView',compact('post','prevPost','nextPost','relatedPosts'));
 
     }
 
@@ -367,7 +372,7 @@ class WelcomeController extends Controller
 
     }
 
-    public function blogComments($id){
+    public function blogComments(Request $r,$id){
       $post =Post::latest()->where('type',1)->where('id',$id)->first();
       if(!$post){
         return abort('404');
@@ -375,8 +380,8 @@ class WelcomeController extends Controller
 
       $check = $r->validate([
           'name' => 'required|max:100',
-          'email' => 'required|max:100',
-          'message' => 'nullable|max:500',
+          'email' => 'required|email|max:100',
+          'message' => 'required|max:500',
       ]);
 
       $comments =new Review();
