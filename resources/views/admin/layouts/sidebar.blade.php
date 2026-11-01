@@ -1,5 +1,5 @@
  <!-- BEGIN: Main Menu-->
-   <div class="main-menu menu-fixed menu-light menu-accordion menu-shadow" data-scroll-to-active="true">
+   <div class="main-menu menu-fixed menu-dark menu-accordion" data-scroll-to-active="true">
      <div class="main-menu-content">
        <ul class="navigation navigation-main" id="main-menu-navigation" data-menu="menu-navigation">
          <li class=" navigation-header"><span>General </span><i class="feather icon-minus" ></i>
@@ -82,7 +82,10 @@
           <a href="#"><i class="fas fa-puzzle-piece"></i><span class="menu-title" >Ecommerce Setting </span></a>
            <ul class="menu-content">
              {{-- <li class=""><a class="menu-item" href="{{route('admin.ecommercePromotions')}}">Promotions</a></li> --}}
-             <li class="{{Request::is('admin/ecommerce/setting*')? 'active' : ''}}"><a class="menu-item" href="{{route('admin.ecommerceSetting',['type'=>'general'])}}">Setting</a>
+             <li class="{{Request::is('admin/ecommerce/coupons*')? 'active' : ''}}"><a class="menu-item" href="{{route('admin.ecommerceCoupons')}}">Coupons</a></li>
+             <li class="{{Request::is('admin/ecommerce/setting/facebook*')? 'active' : ''}}"><a class="menu-item" href="{{route('admin.ecommerceSetting',['type'=>'facebook'])}}">Facebook Post Discount</a></li>
+             <li class="{{Request::is('admin/ecommerce/setting/delivery*')? 'active' : ''}}"><a class="menu-item" href="{{route('admin.ecommerceSetting',['type'=>'delivery'])}}">Delivery &amp; Payment</a></li>
+             <li class="{{Request::is('admin/ecommerce/setting*') && !Request::is('admin/ecommerce/setting/delivery*') && !Request::is('admin/ecommerce/setting/facebook*') ? 'active' : ''}}"><a class="menu-item" href="{{route('admin.ecommerceSetting',['type'=>'general'])}}">Setting</a>
              </li>
            </ul>
          </li>
@@ -152,6 +155,8 @@
              <li class="{{Request::is('admin/orders/delivered')? 'active' : ''}}"><a class="menu-item" href="{{route('admin.orders','delivered')}}"> Completed Orders</a></li>
              <li class="{{Request::is('admin/orders/cancelled')? 'active' : ''}}"><a class="menu-item" href="{{route('admin.orders','cancelled')}}"> Cancelled Orders</a></li>
              <li class="{{Request::is('admin/orders/unpaid')? 'active' : ''}}"><a class="menu-item" href="{{route('admin.orders','unpaid')}}"> Unpaid Orders</a></li>
+             <li class="{{Request::is('admin/orders/fb-pending')? 'active' : ''}}"><a class="menu-item" href="{{route('admin.orders','fb-pending')}}"> FB Discount Verify</a></li>
+             <li class="{{Request::is('admin/orders/advance-pending')? 'active' : ''}}"><a class="menu-item" href="{{route('admin.orders','advance-pending')}}"> Advance Verify</a></li>
              <li class="{{Request::is('admin/orders/pending-payment')? 'active' : ''}}"><a class="menu-item" href="{{route('admin.orders','pending-payment')}}"> Pending Payment</a></li> 
            </ul>
          </li>
@@ -310,8 +315,11 @@
          </li>
 
        </ul>
-       <div style="padding: 15px;text-align: center;border: 1px solid #e5e7ec;font-size: 20px;">
-         <p>Support Center<br>Contact Us<br>Call: {{general()->mobile}}</p>
+       <div class="pa-support">
+         <span class="pa-support-icon"><i class="fas fa-headset"></i></span>
+         <b>Support Center</b>
+         <span>Need help? Call us</span>
+         <a href="tel:{{general()->mobile}}">{{general()->mobile}}</a>
        </div>
      </div>
    </div>

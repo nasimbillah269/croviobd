@@ -743,7 +743,7 @@ class OrdersController extends Controller
 	    
 
 
-        if($status==null || $status=='pending-payment' || $status=='unpaid' || $status=='pending' || $status=='confirmed' || $status=='shipped' || $status=='delivered' || $status=='cancelled'){
+        if($status==null || $status=='pending-payment' || $status=='advance-pending' || $status=='fb-pending' || $status=='unpaid' || $status=='pending' || $status=='confirmed' || $status=='shipped' || $status=='delivered' || $status=='cancelled'){
             
             if($r->action=='active'){
                 if(!$r->status){
@@ -858,6 +858,10 @@ class OrdersController extends Controller
                     $qq->where('order_status','<>','temp');
                 }else if($status=='pending-payment'){
                     $qq->where('payment_method',null);
+                }else if($status=='fb-pending'){
+                    $qq->where('fb_post_status','pending');
+                }else if($status=='advance-pending'){
+                    $qq->where('advance_status','pending');
                 }else if($status=='unpaid'){
                     $qq->whereIn('payment_status',['unpaid','partial']);
                 }else{
@@ -1345,6 +1349,229 @@ class OrdersController extends Controller
         Session()->flash('error','Unknown Type Action Not Allow!');
         return redirect()->back();
         
+    }
+
+
+    // Verify or reject the advance a customer paid by Bangla QR at checkout
+    public function ordersAdvanceVerify(Request $r,$id){
+
+        $order =Order::where('order_type','customer_order')->find($id);
+        if(!$order){
+            Session()->flash('error','Order Are Not Found');
+            return redirect()->route('admin.orders');
+        }
+
+        if($order->advance_status!='pending'){
+            Session()->flash('error','This order has no advance payment waiting for verification');
+            return redirect()->back();
+        }
+
+        $check = $r->validate([
+            'action' => 'required|in:verify,reject',
+            'option' => 'nullable|numeric',
+            'note' => ($r->action=='reject' ? 'required' : 'nullable').'|max:255',
+        ],[
+            'note.required' => 'Please write why the payment is rejected (customer will see it).',
+        ]);
+
+        $general =General::first();
+
+        if($r->action=='verify'){
+
+            $methodOption =$r->option ? Attribute::where('type',11)->where('parent_id','<>',null)->find($r->option) : null;
+
+            $transection =new Transaction();
+            $transection->src_id =$order->id;
+            $transection->user_id =$order->user_id;
+            $transection->type =0;
+            $transection->status ='success';
+            $transection->payment_method ='Bangla QR';
+            $transection->method_id =$methodOption ? $methodOption->parent_id : null;
+            $transection->method_option_id =$methodOption ? $methodOption->id : null;
+            $transection->transection_id =$order->transection;
+            $transection->amount =$order->advance_amount;
+            $transection->currency =$general->currency;
+            $transection->billing_note ='Checkout advance verified. Sender: '.$order->sender_number.($r->note ? '. '.$r->note : '');
+            $transection->billing_name =$order->name;
+            $transection->billing_mobile =$order->mobile;
+            $transection->billing_email =$order->email;
+            $transection->billing_address =$order->address;
+            $transection->addedby_id =Auth::id();
+            $transection->save();
+
+            if($methodOption){
+                $methodOption->amounts +=$transection->amount;
+                $methodOption->save();
+            }
+
+            $order->paid_amount =$order->transectionsSuccess()->sum('amount');
+            if($order->grand_total >= $order->paid_amount){
+                $order->due_amount =$order->grand_total-$order->paid_amount;
+                $order->extra_amount =0;
+            }else{
+                $order->due_amount =0;
+                $order->extra_amount =$order->paid_amount-$order->grand_total;
+            }
+            $order->payment_status =$order->due_amount==0 ? 'paid' : 'partial';
+
+            $order->advance_status ='verified';
+            $order->advance_note =$r->note;
+            $order->advance_verified_at =Carbon::now();
+            $order->advance_verified_by =Auth::id();
+
+            if($order->order_status=='pending'){
+                $this->applyOrderStatus($order,'confirmed');
+            }
+            $order->save();
+
+            $msg ="প্রিয় {$order->name}, আপনার অর্ডার #{$order->invoice} এর অগ্রিম ".number_format($order->advance_amount)." টাকা যাচাই হয়েছে এবং অর্ডারটি কনফার্ম করা হয়েছে। ডেলিভারির সময় দিতে হবে: ".number_format($order->due_amount)." টাকা। - {$general->title}";
+            $flash ='Advance verified and order confirmed';
+
+        }else{
+
+            $order->advance_status ='rejected';
+            $order->advance_note =$r->note;
+            $order->advance_verified_at =Carbon::now();
+            $order->advance_verified_by =Auth::id();
+            $order->cancelled_reason ='Advance payment not verified';
+            $order->cancelled_msg =$r->note;
+
+            if($order->order_status!='cancelled'){
+                $this->applyOrderStatus($order,'cancelled');
+            }
+            $order->save();
+
+            $msg ="প্রিয় {$order->name}, আপনার অর্ডার #{$order->invoice} এর অগ্রিম পেমেন্ট যাচাই করা যায়নি, তাই অর্ডারটি বাতিল করা হয়েছে। কারণ: {$r->note}। প্রয়োজনে যোগাযোগ করুন: {$general->mobile} - {$general->title}";
+            $flash ='Advance rejected and order cancelled';
+        }
+
+        //Customer Notification
+        $notified =[];
+        if($general->sms_status && $order->mobile && sendSms($order->mobile,$msg)){
+            $notified[] ='SMS';
+        }
+        if($general->mail_status && $order->email){
+            try {
+                Mail::raw($msg, function ($message) use ($order,$general) {
+                    $message->from($general->mail_from_address,$general->mail_from_name);
+                    $message->to($order->email,$order->name)->subject('Order #'.$order->invoice.' update - '.$general->title);
+                });
+                $notified[] ='Email';
+            } catch (\Exception $e) {
+
+            }
+        }
+
+        Session()->flash('success',$flash.($notified ? ' (customer notified by '.implode(' & ',$notified).')' : ' (SMS/Email is off, customer not notified)'));
+        return redirect()->back();
+    }
+
+    // Approve or reject the Facebook post discount the customer asked for at checkout
+    public function ordersFbReview(Request $r,$id){
+
+        $order =Order::where('order_type','customer_order')->find($id);
+        if(!$order){
+            Session()->flash('error','Order Are Not Found');
+            return redirect()->route('admin.orders');
+        }
+
+        if($order->fb_post_status!='pending'){
+            Session()->flash('error','This order has no Facebook post waiting for review');
+            return redirect()->back();
+        }
+
+        $check = $r->validate([
+            'action' => 'required|in:approve,reject',
+            'discount' => ($r->action=='approve' ? 'required' : 'nullable').'|numeric|min:0|max:'.(float)$order->total_price,
+            'note' => ($r->action=='reject' ? 'required' : 'nullable').'|max:255',
+        ],[
+            'note.required' => 'Please write why the post is rejected (customer will see it).',
+            'discount.max' => 'Discount can not be more than the products total.',
+        ]);
+
+        $general =General::first();
+
+        $order->fb_note =$r->note;
+        $order->fb_reviewed_at =Carbon::now();
+        $order->fb_reviewed_by =Auth::id();
+
+        if($r->action=='approve'){
+
+            $order->fb_post_status ='approved';
+            $order->fb_discount =round($r->discount);
+            $order->grand_total =max($order->grand_total - $order->fb_discount, 0);
+
+            if($order->grand_total >= $order->paid_amount){
+                $order->due_amount =$order->grand_total-$order->paid_amount;
+                $order->extra_amount =0;
+            }else{
+                $order->due_amount =0;
+                $order->extra_amount =$order->paid_amount-$order->grand_total;
+            }
+            if($order->paid_amount > 0){
+                $order->payment_status =$order->due_amount==0 ? 'paid' : 'partial';
+            }
+            $order->save();
+
+            $msg ="প্রিয় {$order->name}, আপনার Facebook পোস্ট যাচাই হয়েছে! অর্ডার #{$order->invoice} এ ".number_format($order->fb_discount)." টাকা স্পেশাল ডিসকাউন্ট দেওয়া হয়েছে। নতুন মোট: ".number_format($order->grand_total)." টাকা। - {$general->title}";
+            $flash ='Facebook discount approved: '.priceFullFormat($order->fb_discount).' taken off'.($order->extra_amount > 0 ? '. Customer has paid extra '.priceFullFormat($order->extra_amount).', refund it.' : '');
+
+        }else{
+
+            $order->fb_post_status ='rejected';
+            $order->fb_discount =0;
+            $order->save();
+
+            $msg ="প্রিয় {$order->name}, অর্ডার #{$order->invoice} এর Facebook পোস্ট ডিসকাউন্ট দেওয়া যায়নি। কারণ: {$r->note}। আপনার অর্ডার আগের মতোই চলবে। - {$general->title}";
+            $flash ='Facebook discount rejected';
+        }
+
+        $notified =[];
+        if($general->sms_status && $order->mobile && sendSms($order->mobile,$msg)){
+            $notified[] ='SMS';
+        }
+        if($general->mail_status && $order->email){
+            try {
+                Mail::raw($msg, function ($message) use ($order,$general) {
+                    $message->from($general->mail_from_address,$general->mail_from_name);
+                    $message->to($order->email,$order->name)->subject('Order #'.$order->invoice.' update - '.$general->title);
+                });
+                $notified[] ='Email';
+            } catch (\Exception $e) {
+
+            }
+        }
+
+        Session()->flash('success',$flash.($notified ? ' (customer notified by '.implode(' & ',$notified).')' : ' (SMS/Email is off, customer not notified)'));
+        return redirect()->back();
+    }
+
+    // Same item/stock handling the order list and manage page use when status changes
+    private function applyOrderStatus($order,$status){
+
+        $order->order_status =$status;
+        $order[$status.'_at'] =$order[$status.'_at'] ?: Carbon::now();
+        $order[$status.'_by'] =Auth::id();
+
+        foreach($order->items as $item){
+            if($item->order_status!='cancelled' && $status=='cancelled' && $item->product){
+                $product =$item->product;
+                if(!$product->variation_status){
+                    $product->quantity+=$item->quantity;
+                    if($product->sell_count > 0){
+                        $product->sell_count-=1;
+                    }
+                    $product->save();
+                }
+            }
+
+            $item->order_status =$status;
+            if($status=='confirmed'){
+                $item->confirmed_at =$order->confirmed_at;
+                $item->confirmed_by =$order->confirmed_by;
+            }
+            $item->save();
+        }
     }
 
 

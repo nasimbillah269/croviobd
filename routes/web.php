@@ -68,6 +68,9 @@ Route::get('select-delivery-area/{id}',[CartController::class,'selectDeliveryAre
 Route::get('carts',[CartController::class,'carts'])->name('carts');
 Route::get('checkout',[CartController::class,'checkout'])->name('checkout');
 Route::post('checkout-post',[CartController::class,'checkoutPost'])->name('checkoutPost');
+Route::get('checkout-locations',[CartController::class,'checkoutLocations'])->name('checkoutLocations');
+Route::get('checkout-fb-post-check',[CartController::class,'fbPostCheck'])->name('fbPostCheck');
+Route::get('order-success/{invoice}',[CartController::class,'orderSuccess'])->name('orderSuccess');
 Route::get('order-payment/{id}',[CartController::class,'orderPayment'])->name('orderPayment')->middleware('auth');;
 Route::get('order-payment-send/{type}/{id}',[CartController::class,'orderPaymentSend'])->name('orderPaymentSend')->middleware('auth');;
 Route::any('OrderTrack',[CartController::class,'OrderTrack'])->name('OrderTrack');
@@ -77,6 +80,7 @@ Route::get('wishlist-compare/update/{id}/{type}',[CartController::class,'wishlis
 Route::get('my-wishlist',[CartController::class,'myWishlist'])->name('myWishlist');
 Route::get('my-compare',[CartController::class,'myCompare'])->name('myCompare');
 Route::post('my-coupon-apply}',[CartController::class,'couponApply'])->name('couponApply');
+Route::post('my-coupon-remove',[CartController::class,'couponRemove'])->name('couponRemove');
 Route::post('order-now/{id}',[CartController::class,'orderNow'])->name('orderNow');
 
 Route::get('/{slug}',[WelcomeController::class,'pageView'])->name('pageView');
@@ -238,6 +242,12 @@ Route::post('/products/attributes/item-update/{id}',[EcommerceController::class,
 
 // Ecommerce Setting Route
 Route::get('/ecommerce/coupons',[EcommerceController::class,'ecommerceCoupons'])->name('ecommerceCoupons');
+Route::get('/ecommerce/coupons/create',[EcommerceController::class,'ecommerceCouponsEdit'])->name('ecommerceCouponsCreate');
+Route::get('/ecommerce/coupons/edit/{id}',[EcommerceController::class,'ecommerceCouponsEdit'])->name('ecommerceCouponsEdit');
+Route::post('/ecommerce/coupons/update/{id?}',[EcommerceController::class,'ecommerceCouponsUpdate'])->name('ecommerceCouponsUpdate');
+Route::get('/ecommerce/coupons/delete/{id}',[EcommerceController::class,'ecommerceCouponsDelete'])->name('ecommerceCouponsDelete');
+Route::get('/ecommerce/delivery-zone/{id}',[EcommerceController::class,'deliveryZoneDistricts'])->name('deliveryZoneDistricts');
+Route::post('/ecommerce/delivery-zone/{id}/update',[EcommerceController::class,'deliveryZoneDistrictsUpdate'])->name('deliveryZoneDistrictsUpdate');
 Route::get('/ecommerce/promotions',[EcommerceController::class,'ecommercePromotions'])->name('ecommercePromotions');
 Route::get('/ecommerce/setting/{type}',[EcommerceController::class,'ecommerceSetting'])->name('ecommerceSetting');
 
@@ -275,6 +285,8 @@ Route::get('/orders/{status?}',[OrdersController::class,'orders'])->name('orders
 Route::get('/orders/manage/{id}',[OrdersController::class,'ordersManage'])->name('ordersManage');
 
 Route::post('/orders/update/{id}',[OrdersController::class,'ordersManageUpdate'])->name('ordersManageUpdate');
+Route::post('/orders/fb-review/{id}',[OrdersController::class,'ordersFbReview'])->name('ordersFbReview');
+Route::post('/orders/advance-verify/{id}',[OrdersController::class,'ordersAdvanceVerify'])->name('ordersAdvanceVerify');
 Route::post('/orders/payments/{id}',[OrdersController::class,'ordersPaymentsUpdate'])->name('ordersPaymentsUpdate');
 Route::post('/orders/return/{id}',[OrdersController::class,'ordersReturnUpdate'])->name('ordersReturnUpdate');
 // Order Management Route End

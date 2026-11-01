@@ -27,6 +27,8 @@ use App\Models\OrderReturnItem;
 use App\Models\Attribute;
 use App\Models\Permission;
 use App\Models\PostAttribute;
+use App\Models\Coupon;
+use App\Models\DeliveryZone;
 use GuzzleHttp\Client;
 use App\Mail\RegistrationMail;
 
@@ -1916,11 +1918,12 @@ class EcommerceController extends Controller
 
     public function ecommerceSetting($type){
 
-      if($type=='general' || $type=='shipping' || $type=='payments'){
+      if($type=='general' || $type=='shipping' || $type=='payments' || $type=='delivery' || $type=='facebook'){
 
         $shippingZones =PostExtra::where('type',3)->where('status','<>','temp')->where('parent_id',null)->get();
+        $deliveryZones =DeliveryZone::with('districtCharges')->orderBy('drag')->get();
         
-        return view('admin.ecommerce-setting.settings',compact('type','shippingZones'));
+        return view('admin.ecommerce-setting.settings',compact('type','shippingZones','deliveryZones'));
       }else{
 
         Session()->flash('error','Unknown Type Action Not Allow');
@@ -2007,6 +2010,35 @@ class EcommerceController extends Controller
             return redirect()->back();
         }
         
+        if($type=='delivery'){
+            return $this->deliverySettingUpdate($r,$general);
+        }
+
+        if($type=='facebook'){
+            $check = $r->validate([
+              'fb_discount_type' => 'required|in:flat,percentage',
+              'fb_discount_amount' => 'required|numeric|min:0'.($r->fb_discount_type=='percentage'?'|max:100':''),
+              'fb_discount_max' => 'nullable|numeric|min:0',
+              'fb_post_min_days' => 'required|integer|min:1|max:30',
+              'fb_full_advance_rule' => 'required|in:refund,not_allowed',
+              'fb_page_name' => 'nullable|max:100',
+            ],[
+              'fb_post_min_days.max' => 'Minimum post age can be at most 30 days (1 month).',
+            ]);
+
+            $general->fb_discount_status =$r->fb_discount_status ? 1 : 0;
+            $general->fb_discount_type =$r->fb_discount_type;
+            $general->fb_discount_amount =$r->fb_discount_amount;
+            $general->fb_discount_max =$r->fb_discount_max?:0;
+            $general->fb_post_min_days =$r->fb_post_min_days;
+            $general->fb_full_advance_rule =$r->fb_full_advance_rule;
+            $general->fb_page_name =$r->fb_page_name;
+            $general->save();
+
+            Session::flash('success','Facebook Post Discount Setting Update Successfully Done!');
+            return redirect()->back();
+        }
+        
         return 'stop';
     }
 
@@ -2079,5 +2111,182 @@ class EcommerceController extends Controller
 
 
 
+
+
+    //Coupons Function Start
+
+    public function ecommerceCoupons(Request $r){
+
+      $coupons =Coupon::latest()
+        ->where(function($q) use ($r){
+          if($r->search){
+            $q->where('code','LIKE','%'.$r->search.'%');
+          }
+          if($r->status){
+            $q->where('status',$r->status);
+          }
+        })
+        ->paginate(25)->appends(['search'=>$r->search,'status'=>$r->status]);
+
+      return view('admin.ecommerce-setting.coupons',compact('coupons','r'));
+    }
+
+    public function ecommerceCouponsEdit($id=null){
+
+      $coupon =$id ? Coupon::find($id) : new Coupon();
+      if(!$coupon){
+        Session::flash('error','Coupon Are Not Found');
+        return redirect()->route('admin.ecommerceCoupons');
+      }
+
+      return view('admin.ecommerce-setting.couponEdit',compact('coupon'));
+    }
+
+    public function ecommerceCouponsUpdate(Request $r,$id=null){
+
+      $coupon =$id ? Coupon::find($id) : new Coupon();
+      if(!$coupon){
+        Session::flash('error','Coupon Are Not Found');
+        return redirect()->route('admin.ecommerceCoupons');
+      }
+
+      $r->merge(['code'=>strtoupper(trim((string)$r->code))]);
+
+      $check = $r->validate([
+        'code' => ['required','max:50','regex:/^[A-Z0-9_-]+$/',Rule::unique('coupons','code')->ignore($coupon->id)],
+        'discount_type' => 'required|in:percentage,flat',
+        'discount' => 'required|numeric|min:0'.($r->discount_type=='percentage'?'|max:100':''),
+        'minimum_shopping' => 'nullable|numeric|min:0',
+        'max_discount' => 'nullable|numeric|min:0',
+        'date_from' => 'nullable|date',
+        'date_to' => 'nullable|date|after_or_equal:date_from',
+        'usage_limit' => 'nullable|integer|min:0',
+        'status' => 'required|in:active,inactive',
+      ],[
+        'code.regex' => 'Coupon code may contain only letters, numbers, dash and underscore.',
+      ]);
+
+      $coupon->code =$r->code;
+      $coupon->discount_type =$r->discount_type;
+      $coupon->discount =$r->discount;
+      $coupon->minimum_shopping =$r->minimum_shopping?:0;
+      $coupon->max_discount =$r->max_discount?:0;
+      $coupon->date_from =$r->date_from?:null;
+      $coupon->date_to =$r->date_to?:null;
+      $coupon->usage_limit =$r->usage_limit?:0;
+      $coupon->status =$r->status;
+      if(!$coupon->exists){
+        $coupon->addedby_id =Auth::id();
+      }
+      $coupon->save();
+
+      Session::flash('success','Coupon Saved Successfully Done!');
+      return redirect()->route('admin.ecommerceCouponsEdit',$coupon->id);
+    }
+
+    public function ecommerceCouponsDelete($id){
+
+      $coupon =Coupon::find($id);
+      if($coupon){
+        $coupon->delete();
+        Session::flash('success','Coupon Deleted Successfully Done!');
+      }else{
+        Session::flash('error','Coupon Are Not Found');
+      }
+
+      return redirect()->route('admin.ecommerceCoupons');
+    }
+
+    //Coupons Function End
+
+    public function deliveryZoneDistricts($id){
+
+      $zone =DeliveryZone::with('districtCharges')->find($id);
+      if(!$zone){
+        Session::flash('error','Zone Are Not Found');
+        return redirect()->route('admin.ecommerceSetting','delivery');
+      }
+
+      $districts =$zone->districts();
+
+      return view('admin.ecommerce-setting.zoneDistricts',compact('zone','districts'));
+    }
+
+    public function deliveryZoneDistrictsUpdate(Request $r,$id){
+
+      $zone =DeliveryZone::find($id);
+      if(!$zone){
+        Session::flash('error','Zone Are Not Found');
+        return redirect()->route('admin.ecommerceSetting','delivery');
+      }
+
+      $check = $r->validate([
+        'shipping_charge' => 'required|numeric|min:0',
+        'charges.*' => 'nullable|numeric|min:0',
+      ]);
+
+      $zone->shipping_charge =$r->shipping_charge;
+      $zone->save();
+
+      $districtIds =$zone->districts()->pluck('id');
+
+      // Blank means "use zone default", so the override row is removed
+      foreach($districtIds as $districtId){
+        $charge =$r->input('charges.'.$districtId);
+        if($charge === null || $charge === ''){
+          $zone->districtCharges()->where('district_id',$districtId)->delete();
+        }else{
+          $zone->districtCharges()->updateOrCreate(['district_id'=>$districtId],['shipping_charge'=>$charge]);
+        }
+      }
+
+      Session::flash('success','District Charges Update Successfully Done!');
+      return redirect()->back();
+    }
+
+    private function deliverySettingUpdate(Request $r,$general){
+
+        $check = $r->validate([
+          'charges.*' => 'nullable|numeric|min:0',
+          'cod_advance_percent' => 'required|integer|min:0|max:100',
+          'bangla_qr_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+          'bangla_qr_number' => 'nullable|max:100',
+        ]);
+
+        foreach(DeliveryZone::get() as $zone){
+          $zone->shipping_charge =$r->input('charges.'.$zone->id, $zone->shipping_charge)?:0;
+          $zone->status =$r->input('statuses.'.$zone->id)=='active' ? 'active' : 'inactive';
+          $zone->save();
+        }
+
+        $general->cod_advance_percent =$r->cod_advance_percent;
+        $general->full_advance_free_delivery =$r->full_advance_free_delivery ? 1 : 0;
+        $general->bangla_qr_number =$r->bangla_qr_number;
+
+        if($r->remove_qr && $general->bangla_qr_image){
+          if(File::exists(public_path($general->bangla_qr_image))){
+            File::delete(public_path($general->bangla_qr_image));
+          }
+          $general->bangla_qr_image =null;
+        }
+
+        if($r->hasFile('bangla_qr_image')){
+          $file=$r->bangla_qr_image;
+
+          if($general->bangla_qr_image && File::exists(public_path($general->bangla_qr_image))){
+            File::delete(public_path($general->bangla_qr_image));
+          }
+
+          $folder ="medies/".Carbon::now()->format('M_Y');
+          $img =time().'.'.uniqid().'.'.$file->getClientOriginalExtension();
+          $file->move(public_path($folder), $img);
+          $general->bangla_qr_image =$folder.'/'.$img;
+        }
+
+        $general->save();
+
+        Session::flash('success','Delivery & Payment Setting Update Successfully Done!');
+        return redirect()->back();
+    }
 
 }

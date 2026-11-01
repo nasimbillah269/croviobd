@@ -41,6 +41,10 @@
      <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet" />
      <!-- BEGIN: Custom CSS-->
      <link rel="stylesheet" type="text/css" href="{{asset('app-assets/css/style.css')}}" />
+     <link rel="preconnect" href="https://fonts.googleapis.com" />
+     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+     <link rel="stylesheet" type="text/css" href="{{asset('app-assets/css/premium.css')}}?v={{filemtime(public_path('app-assets/css/premium.css'))}}" />
      <!-- END: Custom CSS-->
 
      <!-- BEGIN: Theme JS-->

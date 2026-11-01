@@ -108,6 +108,7 @@
 									            <th width="10%">invoice NO</th>
 									            <th width="25%">Customer</th>
 									            <th>Price ({{general()->currency}})</th>
+									            <th>Advance / TrxID</th>
 									            <th width="18%">Date</th>
 									            <th>Status</th>
 
@@ -127,6 +128,9 @@
 									    		@else
 									    		{{$order->user?$order->user->mobile:''}}
 									    		@endif
+									    		@if($order->fb_post_status)
+									    		<br><span class="badge {{$order->fb_post_status=='approved' ? 'badge-success' : ($order->fb_post_status=='rejected' ? 'badge-danger' : 'badge-primary')}}"><i class="fab fa-facebook"></i> FB {{$order->fb_post_status=='pending' ? 'Need Review' : ucfirst($order->fb_post_status)}}</span>
+									    		@endif
 									    		</td>
 									    		<td>
 									    		    {{App\Models\General::first()->currency}}
@@ -139,6 +143,21 @@
 									                <span class="badge badge-success" style="background:#f44336;">{{ucfirst($order->payment_status)}}</span>
 									                @endif
 									            </td>
+									    <td>
+									        @if($order->advance_amount > 0)
+									        {{number_format($order->advance_amount)}} <small>{{$order->payment_method=='Cash On Delivery' ? 'COD adv.' : 'Full'}}</small><br>
+									        <small><b>TrxID:</b> {{$order->transection}}<br><b>From:</b> {{$order->sender_number}}</small><br>
+									        @if($order->advance_status=='verified')
+									        <span class="badge badge-success">Verified</span>
+									        @elseif($order->advance_status=='rejected')
+									        <span class="badge badge-danger">Rejected</span>
+									        @else
+									        <span class="badge badge-warning">Need Verify</span>
+									        @endif
+									        @else
+									        <small class="text-muted">-</small>
+									        @endif
+									    </td>
 									    		<td>{{$order->created_at->format('Y-m-d h:i A')}}</td>
 									    		<td>
 									            @if($order->payment_method==null)
@@ -165,7 +184,7 @@
 									    	
 									        @endforeach
 									        @if($orders->count()==0)
-									        <tr><td colspan="7"><center>No Order Found</center></td></tr>
+									        <tr><td colspan="8"><center>No Order Found</center></td></tr>
 									        @endif
 									    </tbody>
 

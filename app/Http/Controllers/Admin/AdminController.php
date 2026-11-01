@@ -39,84 +39,75 @@ class AdminController extends Controller
 {
 
     public function dashboard(){
-        
-        
-        ///Reports  Summery Dashboard
-        
-        
-        //$hash ='$2y$10$LickUZ7b6rNaRfhDUsJjZeWUIc4nmOf/mt5ev15I1upDjLOWdYZUC';
-        
-        // $hash ='$P$BKzGZqyp2d/PTkPu.NpNdg2C3I3e100';
-        
-        // $password ='B@ticromJapan#';
-        
-        // if ( WpPassword::check($password, $hash) ) {
-        //     return  'Password success!';
-        // } else {
-        //      return 'Password failed :(';
-        // }
 
-        // return 'stop';
+        $now =Carbon::now();
+        $orders =Order::where('order_type','customer_order')->where('order_status','<>','temp');
+        $sales =(clone $orders)->where('order_status','<>','cancelled');
 
-        
-    //   return password_hash("123456789", PASSWORD_DEFAULT);
-        
-    //     '25f9e794323b453885f5181f1b624d0b';
-        
-    //     return $user->password2;
-        
+        $todayOrders =(clone $orders)->whereDate('created_at',$now->toDateString())->count();
+        $yesterdayOrders =(clone $orders)->whereDate('created_at',$now->copy()->subDay()->toDateString())->count();
 
-        // $products =Post::where('type',2)->where('status','active')->where('quantity',null)->orderBy('id','asc')->limit(500)->get();
-        
-        // if($products->count() == 0){
-        //     return 'Data Finish';
-        // }
-        
-        // foreach($products as $product){
-        //     $product->quantity=100;
-        //     $product->save();
-        // }
-        
-        // return $products->count();
-        
-        $services30Days=Post::where('type',2)
-        ->where('status','<>','temp')
-        ->whereMonth('created_at', Carbon::now()->month)
-        ->whereYear('created_at', Carbon::now()->year)
-        ->count();
+        $monthSales =(clone $sales)->whereBetween('created_at',[$now->copy()->startOfMonth(),$now])->sum('grand_total');
+        $lastMonthSales =(clone $sales)->whereBetween('created_at',[$now->copy()->subMonthNoOverflow()->startOfMonth(),$now->copy()->subMonthNoOverflow()])->sum('grand_total');
 
-        $posts30Days=Post::where('type',1)
-        ->where('status','<>','temp')
-        ->whereMonth('created_at', Carbon::now()->month)
-        ->whereYear('created_at', Carbon::now()->year)
-        ->count();
+        $trend =function($current,$previous){
+            if($previous == 0){
+                return $current > 0 ? null : 0;
+            }
+            return round((($current-$previous)/$previous)*100);
+        };
 
-        $pagesTotal=Post::where('type',0)
-        ->where('status','<>','temp')
-        ->count();
+        $stats =[
+            'todayOrders' => $todayOrders,
+            'todayTrend' => $trend($todayOrders,$yesterdayOrders),
+            'todaySales' => (clone $sales)->whereDate('created_at',$now->toDateString())->sum('grand_total'),
+            'monthSales' => $monthSales,
+            'monthTrend' => $trend($monthSales,$lastMonthSales),
+            'monthOrders' => (clone $orders)->whereBetween('created_at',[$now->copy()->startOfMonth(),$now])->count(),
+            'pending' => (clone $orders)->where('order_status','pending')->count(),
+            'toShip' => (clone $orders)->where('order_status','confirmed')->count(),
+            'customers' => User::where('customer',true)->count(),
+            'newCustomers' => User::where('customer',true)->whereBetween('created_at',[$now->copy()->startOfMonth(),$now])->count(),
+            'advancePending' => (clone $orders)->where('advance_status','pending')->count(),
+            'fbPending' => (clone $orders)->where('fb_post_status','pending')->count(),
+            'lowStock' => Post::where('type',2)->where('status','active')->where('quantity','<=',5)->count(),
+            'products' => Post::where('type',2)->where('status','<>','temp')->count(),
+            'posts' => Post::where('type',1)->where('status','<>','temp')->count(),
+            'pages' => Post::where('type',0)->where('status','<>','temp')->count(),
+            'brands' => Attribute::where('type',2)->where('status','<>','temp')->count(),
+        ];
 
-        $brandTotal=Attribute::where('type',2)
-        ->where('status','<>','temp')
-        ->count();
+        // Last 30 days, one point per day (days without orders count as 0)
+        $from =$now->copy()->subDays(29)->startOfDay();
+        $daily =(clone $sales)->where('created_at','>=',$from)
+            ->selectRaw('DATE(created_at) as day, COUNT(*) as orders, SUM(grand_total) as amount')
+            ->groupBy('day')->get()->keyBy('day');
+        $chart =['labels'=>[],'orders'=>[],'amount'=>[]];
+        for($d=$from->copy(); $d->lte($now); $d->addDay()){
+            $row =$daily->get($d->toDateString());
+            $chart['labels'][] =$d->format('d M');
+            $chart['dates'][] =$d->copy()->startOfDay()->timestamp*1000;
+            $chart['orders'][] =$row ? (int)$row->orders : 0;
+            $chart['amount'][] =$row ? round($row->amount) : 0;
+        }
+        $chart['totalAmount'] =array_sum($chart['amount']);
+        $chart['totalOrders'] =array_sum($chart['orders']);
 
+        $statusCounts =(clone $orders)->selectRaw('order_status, COUNT(*) as total')->groupBy('order_status')->pluck('total','order_status');
 
-        $reports=array(
-                    "services"=>$services30Days,
-                    "posts"=>$posts30Days,
-                    "pages"=>$pagesTotal,
-                    "brands"=>$brandTotal,
-                );
-        ///Reports  Summery Dashboard
+        $latestOrders =(clone $orders)->latest()->limit(8)->get();
 
-        $posts =Post::latest()->where('type',1)->where('status','<>','temp')->paginate(10);
-        $products =Post::latest()->where('type',2)->where('status','<>','temp')->paginate(10);
-        
-        
-        
-        //return User::where('old_id','2475')->get();
-        
-        return view('admin.dashboard',compact('posts','reports','products'));
-      
+        $topProducts =OrderItem::whereHas('order',function($q){
+                $q->where('order_type','customer_order')->whereNotIn('order_status',['temp','cancelled']);
+            })
+            ->selectRaw('product_id, MAX(product_name) as product_name, SUM(quantity) as qty, SUM(final_price) as amount')
+            ->groupBy('product_id')->orderByDesc('qty')->limit(5)->get();
+        $topProductModels =Post::whereIn('id',$topProducts->pluck('product_id'))->get()->keyBy('id');
+
+        $lowStockProducts =Post::where('type',2)->where('status','active')->where('quantity','<=',5)->orderBy('quantity')->limit(5)->get();
+
+        return view('admin.dashboard',compact('stats','chart','statusCounts','latestOrders','topProducts','topProductModels','lowStockProducts'));
+
     }
 
     

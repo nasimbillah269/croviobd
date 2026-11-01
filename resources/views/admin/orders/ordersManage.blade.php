@@ -280,6 +280,123 @@
 		                        			<th>Date:</th>
 		                        			<td>{{$order->created_at->format('d-m-Y')}}</td>
 		                        		</tr>
+		                        		@if($order->delivery_zone_id || $order->advance_amount > 0)
+		                        		<tr>
+		                        		    <th>Payment Method:</th>
+		                        		    <td>{{$order->payment_method}}</td>
+		                        		</tr>
+		                        		<tr>
+		                        		    <th>Delivery:</th>
+		                        		    <td>{{$order->area_name}}{{$order->city_name ? ' - '.$order->city_name : ''}}<br><small>{{$order->full_address}}</small></td>
+		                        		</tr>
+		                        		@if($order->coupon_code)
+		                        		<tr>
+		                        		    <th>Coupon:</th>
+		                        		    <td>{{$order->coupon_code}} (-{{priceFullFormat($order->coupon_discount)}})</td>
+		                        		</tr>
+		                        		@endif
+		                        		@if($order->advance_amount > 0)
+		                        		<tr>
+		                        		    <th>Advance Payment:</th>
+		                        		    <td>
+		                        		        <b>{{priceFullFormat($order->advance_amount)}}</b>
+		                        		        @if($order->advance_status=='verified')
+		                        		        <span class="badge badge-success">Verified</span>
+		                        		        @elseif($order->advance_status=='rejected')
+		                        		        <span class="badge badge-danger">Rejected</span>
+		                        		        @else
+		                        		        <span class="badge badge-warning">Need Verify</span>
+		                        		        @endif
+		                        		        <br><b>TrxID:</b> {{$order->transection}}
+		                        		        <br><b>Sender:</b> {{$order->sender_number}}
+		                        		        @if($order->payment_screenshot)
+		                        		        <br><a href="{{asset($order->payment_screenshot)}}" target="_blank">View Screenshot</a>
+		                        		        @endif
+		                        		        @if($order->advance_note)
+		                        		        <br><small><b>Note:</b> {{$order->advance_note}}</small>
+		                        		        @endif
+		                        		        @if($order->advance_verified_at)
+		                        		        <br><small class="text-muted">{{ucfirst($order->advance_status)}} at {{Carbon\Carbon::parse($order->advance_verified_at)->format('d-m-Y h:i A')}}</small>
+		                        		        @endif
+		                        		        @if($order->advance_status=='pending')
+		                        		        <form action="{{route('admin.ordersAdvanceVerify',$order->id)}}" method="post" class="mt-1" style="border: 1px solid #ffc107;border-radius: 5px;padding: 8px;">
+		                        		            @csrf
+		                        		            <small>Check the TrxID in your bank/QR statement, then:</small>
+		                        		            <select name="option" class="form-control form-control-sm mb-1">
+		                        		                <option value="">Received in account (optional)</option>
+		                        		                @foreach($methods as $method)
+		                        		                @foreach($method->methodOptions as $option)
+		                        		                <option value="{{$option->id}}">{{$method->name}} - {{$option->name}}</option>
+		                        		                @endforeach
+		                        		                @endforeach
+		                        		            </select>
+		                        		            <input type="text" name="note" class="form-control form-control-sm mb-1" placeholder="Note (required for reject, sent to customer)">
+		                        		            @if ($errors->has('note'))
+		                        		            <p style="color: red;margin: 0;font-size: 12px;">{{ $errors->first('note') }}</p>
+		                        		            @endif
+		                        		            <button type="submit" name="action" value="verify" class="btn btn-sm btn-success" onclick="return confirm('Payment received? Order will be confirmed.')"><i class="fa fa-check"></i> Verify &amp; Confirm</button>
+		                        		            <button type="submit" name="action" value="reject" class="btn btn-sm btn-danger" onclick="return confirm('Reject payment? Order will be cancelled.')"><i class="fa fa-times"></i> Reject &amp; Cancel</button>
+		                        		        </form>
+		                        		        @endif
+		                        		    </td>
+		                        		</tr>
+		                        		@endif
+		                        		@endif
+		                        		@if($order->fb_post_link)
+		                        		@php $fbDelivered = App\Models\Order::where('order_type','customer_order')->where('mobile',$order->mobile)->where('id','<>',$order->id)->where('order_status','delivered')->latest('delivered_at')->get(['id','invoice','delivered_at']); @endphp
+		                        		@php $fbSameLink = App\Models\Order::where('fb_post_key',$order->fb_post_key)->where('id','<>',$order->id)->get(['id','invoice','fb_post_status']); @endphp
+		                        		<tr>
+		                        		    <th>Facebook Post:</th>
+		                        		    <td>
+		                        		        @if($order->fb_post_status=='approved')
+		                        		        <span class="badge badge-success">Approved</span> -{{priceFullFormat($order->fb_discount)}}
+		                        		        @elseif($order->fb_post_status=='rejected')
+		                        		        <span class="badge badge-danger">Rejected</span>
+		                        		        @else
+		                        		        <span class="badge badge-primary">Need Review</span>
+		                        		        @endif
+		                        		        <br><a href="{{$order->fb_post_link}}" target="_blank" rel="noopener noreferrer" style="word-break: break-all;"><i class="fab fa-facebook"></i> Open Post</a>
+		                        		        <br><small style="word-break: break-all;color: #777;">{{$order->fb_post_link}}</small>
+		                        		        @if($fbSameLink->count())
+		                        		        <br><span class="badge badge-danger">Same post used in: @foreach($fbSameLink as $o)#{{$o->invoice}} ({{$o->fb_post_status}}) @endforeach</span>
+		                        		        @endif
+		                        		        @if($order->fb_note)
+		                        		        <br><small><b>Note:</b> {{$order->fb_note}}</small>
+		                        		        @endif
+		                        		        @if($order->fb_post_status=='pending')
+		                        		        <div class="mt-1" style="border: 1px solid #1877f2;border-radius: 5px;padding: 8px;font-size: 13px;">
+		                        		            <b>Check before approve:</b>
+		                        		            <div>&#9744; Post is real and about a product bought here</div>
+		                        		            <div>&#9744; {{general()->fb_page_name ?: general()->title}} page is tagged or collaborator</div>
+		                        		            <div>&#9744; Post date on or before <b>{{$order->created_at->copy()->subDays(general()->fb_post_min_days)->format('d M Y')}}</b> ({{general()->fb_post_min_days}} days before this order)</div>
+		                        		            <div>
+		                        		                @if($fbDelivered->count())
+		                        		                <span class="text-success">&#10004; {{$fbDelivered->count()}} delivered order(s) on {{$order->mobile}}, last #{{$fbDelivered->first()->invoice}}{{$fbDelivered->first()->delivered_at ? ' on '.Carbon\Carbon::parse($fbDelivered->first()->delivered_at)->format('d M Y') : ''}}</span>
+		                        		                @else
+		                        		                <span class="text-danger">&#10008; No delivered order found for {{$order->mobile}}</span>
+		                        		                @endif
+		                        		            </div>
+		                        		            <form action="{{route('admin.ordersFbReview',$order->id)}}" method="post" class="mt-1">
+		                        		                @csrf
+		                        		                <div class="input-group input-group-sm mb-1">
+		                        		                    <div class="input-group-prepend"><span class="input-group-text">Discount</span></div>
+		                        		                    <input type="number" min="0" step="1" name="discount" value="{{old('discount', fbDiscountFor($order->total_price))}}" class="form-control form-control-sm">
+		                        		                </div>
+		                        		                @if ($errors->has('discount'))
+		                        		                <p style="color: red;margin: 0;font-size: 12px;">{{ $errors->first('discount') }}</p>
+		                        		                @endif
+		                        		                <input type="text" name="note" class="form-control form-control-sm mb-1" placeholder="Note (required for reject, sent to customer)">
+		                        		                @if ($errors->has('note'))
+		                        		                <p style="color: red;margin: 0;font-size: 12px;">{{ $errors->first('note') }}</p>
+		                        		                @endif
+		                        		                <button type="submit" name="action" value="approve" class="btn btn-sm btn-success" onclick="return confirm('Approve and take the discount off this order?')"><i class="fa fa-check"></i> Approve</button>
+		                        		                <button type="submit" name="action" value="reject" class="btn btn-sm btn-danger" onclick="return confirm('Reject this Facebook post?')"><i class="fa fa-times"></i> Reject</button>
+		                        		            </form>
+		                        		        </div>
+		                        		        @endif
+		                        		    </td>
+		                        		</tr>
+		                        		@endif
 		                        	</table>
                         		</div>
                         		{{--<div class="col-md-12">

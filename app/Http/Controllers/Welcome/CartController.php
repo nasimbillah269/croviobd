@@ -14,6 +14,7 @@ use GuzzleHttp\Client;
 use App\Models\Cart;
 use App\Models\General;
 use App\Models\Country;
+use App\Models\DeliveryZone;
 use App\Models\Order;
 use App\Models\User;
 use App\Models\Post;
@@ -304,7 +305,7 @@ class CartController extends Controller
                     $mc = Coupon::where('id',$mci)->first();
                     if($mc)
                     {
-                      $couponDisc = $cartTotalPrice * ($mc->discount / 100);
+                      $couponDisc = $mc->discountFor($cartTotalPrice);
                     }
                 }
                 
@@ -377,41 +378,60 @@ class CartController extends Controller
 
     public function couponApply(Request $r){
 
-    	$check = $r->validate([
+        $check = $r->validate([
             'coupon_code' => 'required|max:100'
         ]);
 
-    	$cookie = $r->cookie('carts');
+        $cookie = $r->cookie('carts');
         $carts = Cart::where('cookie', $cookie)->latest()->paginate(500);
 
-         if($carts->count() > 0){
-            $cartTotalPrice = 0; 
-            foreach($carts as $cart)
-            {
-            $cartTotalPrice = $cartTotalPrice + ($cart->quantity * $cart->product->offerPrice());
+        if($carts->count() < 1){
+            $message = 'আপনার কার্ট খালি, কুপন ব্যবহার করা যাবে না।';
+            if($r->ajax()){
+                return Response()->json(['success' => false, 'message' => $message]);
             }
-            
-            
-
-            $coupon = Attribute::where('name', $r->coupon_code)
-            // ->where('active', true)
-            // ->whereDate('date_from', '<=', date('Y-m-d'))
-            // ->whereDate('date_to', '>=', date('Y-m-d'))
-            ->where('status', 'published')
-            // ->where('discount', '>', 0)
-            // ->where('minimum_shopping', '<=', $cartTotalPrice)
-            ->first();
-
-            if(!$coupon){
-            	$r->session()->forget(['my_coupon_id']);
-            	return back()->with('info', 'Sorry, your coupon is invalid. Please, try again with another coupon code');
-            }
-            $r->session()->put(['my_coupon_id'=>$coupon->id]);
-            return back()->with('success', 'Your coupon code is valid and successfully added');
+            return back()->with('info', $message);
         }
 
-        return back()->with('info', 'Sorry, your Cart Is empty.Can not apply Coupon Code.');
+        $cartTotalPrice = 0;
+        foreach($carts as $cart){
+            $cartTotalPrice += $cart->subtotal();
+        }
 
+        $coupon = Coupon::findValid(trim($r->coupon_code));
+        $reason = $coupon ? $coupon->invalidReason($cartTotalPrice) : 'কুপন কোডটি সঠিক নয়।';
+
+        if($reason){
+            $r->session()->forget(['my_coupon_id']);
+            if($r->ajax()){
+                return Response()->json(['success' => false, 'message' => $reason]);
+            }
+            return back()->with('info', $reason);
+        }
+
+        $r->session()->put(['my_coupon_id' => $coupon->id]);
+        $discount = $coupon->discountFor($cartTotalPrice);
+
+        if($r->ajax()){
+            return Response()->json([
+                'success' => true,
+                'message' => 'কুপন সফলভাবে যোগ হয়েছে। ছাড়: ৳'.en2bnNumber(number_format($discount)),
+                'code' => $coupon->code,
+                'discount' => $discount,
+            ]);
+        }
+        return back()->with('success', 'Your coupon code is valid and successfully added');
+
+    }
+
+    public function couponRemove(Request $r){
+
+        $r->session()->forget(['my_coupon_id']);
+
+        if($r->ajax()){
+            return Response()->json(['success' => true, 'discount' => 0]);
+        }
+        return back();
     }
 
 
@@ -421,15 +441,70 @@ class CartController extends Controller
             $cookie = $r->cookie('carts');
             $carts = Cart::where('cookie','<>',$cookie)->where('user_id',$user->id)->latest()->delete();
         }
-        
+
     	return view($this->device.'cart');
 
     }
 
+    // Single source of truth for checkout money; the checkout page mirrors this logic in JS for the live summary
+    private function checkoutTotals($carts, $zone = null, $paymentMethod = null, $districtId = null){
+
+        $general = general();
+
+        $subtotal = 0;
+        foreach($carts as $cart){
+            if($cart->product){
+                $subtotal += $cart->subtotal();
+            }
+        }
+
+        $coupon = null;
+        $couponDisc = 0;
+        if($mci = Session::get('my_coupon_id')){
+            $coupon = Coupon::find($mci);
+            if($coupon && !$coupon->invalidReason($subtotal)){
+                $couponDisc = $coupon->discountFor($subtotal);
+            }else{
+                $coupon = null;
+            }
+        }
+
+        $tax = $general->tax_status == 1 ? round(($subtotal * $general->tax) / 100) : 0;
+
+        $deliveryCharge = $zone ? $zone->chargeFor($districtId) : 0;
+        $freeDelivery = false;
+        if($paymentMethod == 'full_advance' && $general->full_advance_free_delivery){
+            $freeDelivery = $deliveryCharge > 0;
+            $deliveryCharge = 0;
+        }
+
+        $grandTotal = $subtotal - $couponDisc + $tax + $deliveryCharge;
+
+        if($paymentMethod == 'full_advance'){
+            $advance = $grandTotal;
+        }elseif($paymentMethod == 'cod'){
+            $advance = ceil($deliveryCharge * ($general->cod_advance_percent / 100));
+        }else{
+            $advance = 0;
+        }
+
+        return [
+            'subtotal' => $subtotal,
+            'coupon' => $coupon,
+            'couponDisc' => $couponDisc,
+            'tax' => $tax,
+            'deliveryCharge' => $deliveryCharge,
+            'freeDelivery' => $freeDelivery,
+            'grandTotal' => $grandTotal,
+            'advance' => $advance,
+            'due' => $grandTotal - $advance,
+        ];
+    }
+
     public function checkout(Request $r){
- 
+
     	$user =Auth::user();
-    	
+
     	//Check Cart Is Valid
     	$cookie = $r->cookie('carts');
         $carts = Cart::where('cookie', $cookie)->latest()->paginate(500);
@@ -437,135 +512,120 @@ class CartController extends Controller
         {
             return redirect()->route('carts')->with('info', 'Sorry, Your Cart Is empty.');
         }
-        
-        $user =Auth::user();
+
         if($user && $cookie){
             Cart::where('cookie','<>',$cookie)->where('user_id',$user->id)->latest()->delete();
         }
-        
-	    $afterDay=1;
 
-        $now = Carbon::now();
-        $today = Carbon::parse('today 2pm');
-        
-	    $dayName =$now->format('l');
-	    
-	    if($dayName=='Sunday'){
-            //Sunday Delivery
-            if($now->gte($today)){
-                $afterDay=3;
-            }else{  
-                $afterDay=1; 
-            }
-        }elseif($dayName=='Monday'){
-            //Monday Delivery
-            $afterDay=2;
-        }else{
-           if($now->gte($today)){
-                $afterDay=2;
-            }else{
-                $afterDay=1;
-            }
+        $general = general();
+        $zones = DeliveryZone::with('districtCharges')->where('status','active')->orderBy('drag')->get();
+        $totals = $this->checkoutTotals($carts);
+
+    	return view($this->device.'checkout',compact('user','carts','zones','totals','general'));
+    }
+
+    public function checkoutLocations(Request $r){
+
+        $zone = DeliveryZone::with('districtCharges')->where('status','active')->find($r->zone);
+        if(!$zone){
+            return Response()->json(['success' => false, 'items' => []]);
         }
-        
-        $areaId=null;
-        
-        if($r->ajax() && $r->areaId){
-            $areaId =PostExtra::where('type',3)->where('parent_id','<>',null)->where('src_id',$r->areaId)->first();
-        }elseif($user){
-            $areaId =PostExtra::where('type',3)->where('parent_id','<>',null)->where('src_id',$user->district)->first();
-        }
-	    
-	    if($areaId){
-	        
-                $day =$areaId->parentId?$areaId->parentId->shipping_charge:0;
 
-    	        if($dayName=='Sunday'){
-                    //Sunday Delivery
-                    if($now->gte($today)){
-    	                if($day < 2){
-    	                    $afterDay=3;
-    	                }else{
-    	                    $afterDay=4;
-    	                }
-    	            }else{  
-    	                if($day < 2){
-    	                    $afterDay=1;
-    	                }else{
-    	                    $afterDay=2;
-    	                }
-    	            }
-                }elseif($dayName=='Monday'){
-                    //Monday Delivery
-                    if($now->gte($today)){
-    	                if($day < 2){
-    	                    $afterDay=2;
-    	                }else{
-    	                    $afterDay=3;
-    	                }
-    	            }else{
-    	                if($day < 2){
-    	                    $afterDay=2;
-    	                }else{
-    	                    $afterDay=3;
-    	                }
-    	            }
-                }else{
-                   if($now->gte($today)){
-    	                if($day < 2){
-    	                    $afterDay=2;
-    	                }else{
-    	                    $afterDay=3;
-    	                }
-    	            }else{
-    	                if($day < 2){
-    	                    $afterDay=1;
-    	                }else{
-    	                    $afterDay=2;
-    	                }
-    	            }
-            }
-	      
-	    }
-	    
-	    $dateArray = ["31/12/2024","01/01/2025", "02/01/2025"];
-        if (in_array($now->format('d/m/Y'), $dateArray)) {
-            $afterDay +=1;
-        }
-	    
-	    $cities =Country::where('type',2)->where('parent_id',629)->orderBy('name','asc')->get();
-	    
-	    if($r->ajax() && $r->areaId){
+        $items = $r->district ? $zone->upazilas($r->district) : $zone->districts();
 
-	        $view  =View($this->device.'includes.shippinigAddress',compact('afterDay'))->render();
-	        return Response()->json([
-              'success' => true,
-              'view' => $view,
-              'Day' => $day,
-              'afterDay' => $afterDay,
-              'areaId' => $areaId?:'',
-              'parent' => $areaId?$areaId->parentId:'',
-            ]);
-	    }
-
-    	return view($this->device.'checkout',compact('user','carts','cities','afterDay'));
+        return Response()->json([
+            'success' => true,
+            'items' => $items->map(function($item) use ($zone, $r){
+                $bnName = trim(preg_replace('/[\x{200B}-\x{200F}\x{FEFF}]/u', '', (string)$item->bn_name));
+                $row = ['id' => $item->id, 'name' => $bnName ?: $item->name];
+                if(!$r->district){
+                    $row['charge'] = $zone->chargeFor($item->id);
+                }
+                return $row;
+            })->sortBy('name')->values(),
+        ]);
     }
 
     public function checkoutPost(Request $r){
-        
-    	$check = $r->validate([
-            'name' => 'required|max:100',
-            'mobile' => 'required|max:100',
-            'address' => 'required|max:500',
-            'delivery_area' => 'nullable|max:50',
 
+        // Customers often type Bangla digits in phone/TrxID fields
+        $r->merge([
+            'mobile' => bn2enNumber(trim((string)$r->mobile)),
+            'sender_number' => bn2enNumber(trim((string)$r->sender_number)),
+            'trx_id' => strtoupper(bn2enNumber(trim((string)$r->trx_id))),
         ]);
-        
+
+        $check = $r->validate([
+            'name' => 'required|max:100',
+            'mobile' => ['required','regex:/^(?:\+?88)?01[3-9]\d{8}$/'],
+            'email' => 'nullable|email|max:150',
+            'zone_id' => 'required|numeric',
+            'district_id' => 'required|numeric',
+            'upazila_id' => 'required|numeric',
+            'address' => 'required|max:500',
+            'payment_method' => 'required|in:cod,full_advance',
+            'payment_screenshot' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:4096',
+        ],[
+            'name.required' => 'আপনার নাম লিখুন।',
+            'mobile.required' => 'মোবাইল নম্বর লিখুন।',
+            'mobile.regex' => 'সঠিক মোবাইল নম্বর লিখুন (যেমন: 01XXXXXXXXX)।',
+            'email.email' => 'সঠিক ইমেইল ঠিকানা লিখুন।',
+            'zone_id.required' => 'সেক্টর / বিভাগ সিলেক্ট করুন।',
+            'district_id.required' => 'জেলা সিলেক্ট করুন।',
+            'upazila_id.required' => 'উপজেলা / থানা সিলেক্ট করুন।',
+            'address.required' => 'আপনার ঠিকানা (বাসা/রোড/এলাকা) লিখুন।',
+            'payment_method.required' => 'পেমেন্ট মেথড সিলেক্ট করুন।',
+            'payment_screenshot.image' => 'স্ক্রিনশট অবশ্যই ছবি হতে হবে।',
+            'payment_screenshot.max' => 'স্ক্রিনশট ৪ MB এর বেশি হতে পারবে না।',
+        ]);
 
         if(is_numeric($r->name) || filter_var($r->name, FILTER_VALIDATE_EMAIL)){
-            return back()->with('nameError', 'This field is required your Name. Not Allow Email or Mobile.');
+            return back()->withInput()->with('nameError', 'This field is required your Name. Not Allow Email or Mobile.');
         }
-            
+
+        $zone = DeliveryZone::with('districtCharges')->where('status','active')->find($r->zone_id);
+        if(!$zone || !$zone->hasUpazila($r->district_id, $r->upazila_id)){
+            return back()->withInput()->withErrors(['zone_id' => 'সঠিক সেক্টর, জেলা ও উপজেলা সিলেক্ট করুন।']);
+        }
+
+        $cookie = $r->cookie('carts');
+        $carts = Cart::where('cookie', $cookie)->latest()->paginate(500);
+        if(1 > $carts->count()){
+            return redirect()->route('carts')->with('info', 'Sorry, Your Cart Is empty.');
+        }
+
+        $totals = $this->checkoutTotals($carts, $zone, $r->payment_method, $r->district_id);
+
+        // Payment proof is needed whenever something must be paid in advance
+        if($totals['advance'] > 0){
+            $r->validate([
+                'trx_id' => 'required|max:50',
+                'sender_number' => ['required','regex:/^(?:\+?88)?01[3-9]\d{8}$/'],
+            ],[
+                'trx_id.required' => 'পেমেন্টের TrxID লিখুন।',
+                'sender_number.required' => 'যে নম্বর থেকে পেমেন্ট করেছেন সেটি লিখুন।',
+                'sender_number.regex' => 'প্রেরকের সঠিক মোবাইল নম্বর লিখুন।',
+            ]);
+        }
+
+        // Facebook post discount: link is optional, checked here and approved by admin later
+        $fbPostKey = null;
+        $general = general();
+        $fbAllowed = $general->fb_discount_status && !($r->payment_method=='full_advance' && $general->fb_full_advance_rule=='not_allowed');
+        if($fbAllowed && trim((string)$r->fb_post_link) !== ''){
+            $r->validate(['fb_post_link' => 'max:500'],['fb_post_link.max' => 'লিংকটি অনেক বড়।']);
+            $fbPostKey = fbPostKey($r->fb_post_link);
+            if(!$fbPostKey){
+                return back()->withInput()->withErrors(['fb_post_link' => 'সঠিক Facebook পোস্টের লিংক দিন।']);
+            }
+            if($this->fbPostUsed($fbPostKey)){
+                return back()->withInput()->withErrors(['fb_post_link' => 'এই পোস্টের লিংক আগেই একটি অর্ডারে ব্যবহার করা হয়েছে। একটি পোস্ট একবারই ব্যবহার করা যায়।']);
+            }
+        }
+
+        $district = Country::find($r->district_id);
+        $upazila = Country::find($r->upazila_id);
+
         //User Create
         if(Auth::check()){
             $user=Auth::user();
@@ -583,42 +643,30 @@ class CartController extends Controller
             $user->country=1;
             $user->save();
         }
-        
-        
 
-    
-        $cookie = $r->cookie('carts');
-        
-        $cartCount =0;
-        $myCart = myCart($cookie);
-        $carts = $myCart['carts'];
-        if($carts){
-            $cartCount =$carts->count();
-        }
-        
-        
-        if(1 > $cartCount){
-            return redirect()->route('carts')->with('info', 'Sorry, Your Cart Is empty.');
-        }
-        
-       $order =new Order();
-       $order->user_id=$user?$user->id:null;
-       $order->name=$r->name;
-       $order->mobile=$r->mobile;
-       $order->area_name=$r->delivery_area;
-       $order->address=$r->address;
-       $order->note=$r->note;
-       $order->order_status='pending';
-       $order->pending_at=Carbon::now();
-       $order->pending_by=$user?$user->id:null;
-       $order->save();
+        $order =new Order();
+        $order->user_id=$user?$user->id:null;
+        $order->name=$r->name;
+        $order->mobile=$r->mobile;
+        $order->email=$r->email;
+        $order->delivery_zone_id=$zone->id;
+        $order->division=$zone->division_id;
+        $order->district=$district->id;
+        $order->city=$upazila->id;
+        $order->area_name=$zone->name;
+        $order->city_name=$upazila->name;
+        $order->address=$r->address;
+        $order->full_address=$r->address.', '.$upazila->name.', '.$district->name.' ('.$zone->name.')';
+        $order->note=$r->note;
+        $order->order_status='pending';
+        $order->pending_at=Carbon::now();
+        $order->pending_by=$user?$user->id:null;
+        $order->save();
 
-       $cartTotalPrice = 0;
       	foreach($carts as $cart){
-      		
-      		
+
       		if($cart->product){
-      		    
+
       		$item = new OrderItem;
       		$item->order_id = $order->id;
             $item->user_id = $user?$user->id:null;
@@ -632,7 +680,7 @@ class CartController extends Controller
             if($cart->product){
                 $product =$cart->product;
                 if($product->variation_status){
-                    
+
                 }else{
                     if($product->quantity > $item->quantity){
                         $product->quantity-=$item->quantity;
@@ -656,7 +704,7 @@ class CartController extends Controller
             $item->price = $cart->itemprice();
             $item->total_price = $cart->subtotal();
             $item->final_price = $cart->subtotal()-$item->total_deal_discount;
-        
+
             $item->pending_at = Carbon::now();
             $item->pending_by = $user?$user->id:null;
             $item->addedby_id = $user?$user->id:null;
@@ -664,97 +712,145 @@ class CartController extends Controller
             $item->order_status=$order->order_status;
             $item->seller_paid=$item->final_price;
             $item->save();
-            
+
       		}
 
       	}
-    	
-    	 Cart::where('cookie', $cookie)->latest()->delete();
 
-        
-        $order->total_price= $order->items()->sum('final_price');
-        if(general()->tax_status){
-            
-            $taxT =0;
-            $OTotalT =0;
-            
-            if(is_numeric(general()->tax)){
-                $taxT=general()->tax;
-            }
-            
-            if(is_numeric($order->total_price)){
-                $OTotalT=$order->total_price;
-            }
-            
-            $order->tax= ($OTotalT*$taxT)/100;
-        }else{
-            $order->tax=0;
-        }
-        //Shipping Charge
-        
-        if($order->area_name=='Inside Dhaka'){
-            $shippingCharge=general()->inside_dhaka_shipping_charge;
-        }else{
-            $shippingCharge=general()->outside_dhaka_shipping_charge;
-        }
-        
+    	Cart::where('cookie', $cookie)->latest()->delete();
+
         $frozen = $order->items->where('product_type',1)->count();
         $Dry = $order->items->where('product_type',2)->count();
-        
-        $order->product_type =0;
-        
-        if($frozen > 0 && $Dry==0){
 
+        $order->product_type =0;
+
+        if($frozen > 0 && $Dry==0){
         $order->product_type =1;
         }elseif($Dry > 0 && $frozen==0){
         $order->product_type =2;
         }elseif($Dry > 0 && $frozen > 0){
         $order->product_type =0;
         }
-        
-        $order->shipping_charge =$shippingCharge;
-        
+
+        if($totals['coupon']){
+            $order->coupon_id = $totals['coupon']->id;
+            $order->coupon_code = $totals['coupon']->code;
+            $totals['coupon']->increment('used_count');
+        }
+        $r->session()->forget(['my_coupon_id']);
 
         $order->total_price=$order->items->sum('final_price');
         $order->total_items= $order->items->count();
         $order->total_qty= $order->items->sum('quantity');
+        $order->shipping_charge =$totals['deliveryCharge'];
+        $order->tax =$totals['tax'];
+        $order->coupon_discount =$totals['couponDisc'];
         $order->grand_total =($order->total_price + $order->shipping_charge + $order->tax) - ($order->coupon_discount+$order->coin_discount);
+
+        // Advance stays unverified (paid_amount = 0) until admin checks the TrxID
+        $order->payment_method = $r->payment_method=='full_advance' ? 'Full Advance (Bangla QR)' : 'Cash On Delivery';
+        $order->advance_amount = $r->payment_method=='full_advance' ? $order->grand_total : $totals['advance'];
+        $order->transection = $order->advance_amount > 0 ? $r->trx_id : null;
+        $order->sender_number = $order->advance_amount > 0 ? $r->sender_number : null;
+        $order->advance_status = $order->advance_amount > 0 ? 'pending' : null;
+        if($fbPostKey){
+            $order->fb_post_link = preg_match('#^https?://#i', trim($r->fb_post_link)) ? trim($r->fb_post_link) : 'https://'.trim($r->fb_post_link);
+            $order->fb_post_key = $fbPostKey;
+            $order->fb_post_status = 'pending';
+        }
         $order->paid_amount=0;
-        $order->payment_method='Cash On Delivery';
         $order->due_amount=$order->grand_total;
+
+        if($order->advance_amount > 0 && $r->hasFile('payment_screenshot')){
+            $file = $r->payment_screenshot;
+            $folder = 'medies/payments/'.Carbon::now()->format('M_Y');
+            $img = time().'.'.Str::random(20).'.'.$file->getClientOriginalExtension();
+            $file->move(public_path($folder), $img);
+            $order->payment_screenshot = $folder.'/'.$img;
+        }
+
         $order->invoice=$order->created_at->format('dmY').$order->id;
         $order->save();
 
-        
-        $general =general();
-        //**********Send Mail***************//
-            
-        if($general->mail_status && $order->email){
-            
-            try {
-                Mail::send('mails.InvoiceMail', ['order' => $order,'general'=>$general], function ($message) use ($order,$general) {
-    
-                    $message->from($general->mail_from_address,$general->mail_from_name);
-    
-                    $message->to($order->email,$order->name)
-                    ->subject('Order Completed in '.$general->mail_from_name.".");
-                });
-            } catch (\Exception $e) {
-                
-            }
-            
+        $this->sendOrderConfirmation($order);
 
-        }
+        $r->session()->put('last_order_invoice', $order->invoice);
 
-        //**********Send Mail***************//
-        if(Auth::check()){
-        return redirect()->route('customer.orderDetails',$order->id)->with('success', 'Order successfully submited');
-        }else{
-        return redirect()->route('invoiceView',$order->invoice)->with('success', 'Order successfully submited');
-        }
+        return redirect()->route('orderSuccess',$order->invoice);
 
     }
-    
+
+    // A post counts as used once it is waiting for review or approved; a rejected link may be tried again
+    private function fbPostUsed($key){
+        return Order::where('fb_post_key',$key)->whereIn('fb_post_status',['pending','approved'])->exists();
+    }
+
+    public function fbPostCheck(Request $r){
+
+        if(!general()->fb_discount_status){
+            return Response()->json(['success' => false, 'message' => '']);
+        }
+
+        $key = fbPostKey($r->link);
+        if(!$key){
+            return Response()->json(['success' => false, 'message' => 'এটি সঠিক Facebook পোস্টের লিংক মনে হচ্ছে না।']);
+        }
+        if($this->fbPostUsed($key)){
+            return Response()->json(['success' => false, 'message' => 'সতর্কতা: এই পোস্টের লিংক আগেই ব্যবহার করা হয়েছে। একটি পোস্ট একবারই ব্যবহার করা যায়।']);
+        }
+
+        return Response()->json(['success' => true, 'message' => 'লিংক গ্রহণযোগ্য। অর্ডারের পর আমরা যাচাই করে ডিসকাউন্ট দেব।']);
+    }
+
+    private function sendOrderConfirmation($order){
+
+        $general =general();
+
+        //**********Send Mail***************//
+        if($general->mail_status && $order->email){
+            try {
+                Mail::send('mails.InvoiceMail', ['order' => $order,'general'=>$general], function ($message) use ($order,$general) {
+                    $message->from($general->mail_from_address,$general->mail_from_name);
+                    $message->to($order->email,$order->name)
+                    ->subject('Order #'.$order->invoice.' received - '.$general->title);
+                });
+            } catch (\Exception $e) {
+
+            }
+        }
+
+        //**********Send SMS ***************//
+        if($general->sms_status){
+
+            if($general->order_place_sms_customer && $order->mobile){
+                $msg = "প্রিয় {$order->name}, আপনার অর্ডার #{$order->invoice} গ্রহণ করা হয়েছে। মোট: {$general->currency} ".number_format($order->grand_total).". শীঘ্রই কল করে কনফার্ম করা হবে। - {$general->title}";
+                sendSms($order->mobile, $msg);
+            }
+
+            if($general->order_place_sms_admin && $general->admin_numbers){
+                $msg = "New Order in {$general->title}. Invoice: {$order->invoice}, Total: {$order->grand_total}, Advance: {$order->advance_amount}, TrxID: ".($order->transection?:'-');
+                foreach(explode(',', $general->admin_numbers) as $number){
+                    sendSms(trim($number), $msg);
+                }
+            }
+        }
+    }
+
+    public function orderSuccess(Request $r,$invoice){
+
+        // Only the browser that placed the order sees this page; everyone else gets the public invoice view
+        if($r->session()->get('last_order_invoice') != $invoice){
+            return redirect()->route('invoiceView',$invoice);
+        }
+
+        $order = Order::where('order_type','customer_order')->where('invoice',$invoice)->first();
+        if(!$order){
+            return abort(404);
+        }
+
+        return view($this->device.'orderSuccess',compact('order'));
+    }
+
     public function invoiceView($invoice){
         
         $order = Order::where('order_type','customer_order')->where('invoice',$invoice)->first();
@@ -1045,7 +1141,7 @@ class CartController extends Controller
 
                     if($mc)
                     {
-                      $couponDisc = $cartTotalPrice * ($mc->discount / 100);
+                      $couponDisc = $mc->discountFor($cartTotalPrice);
                     }
                 }
 

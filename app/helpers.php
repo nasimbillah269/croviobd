@@ -145,7 +145,7 @@ function myCart($cookie){
 
             if($mc)
             {
-              $couponDisc = $cartTotalPrice * ($mc->discount / 100);
+              $couponDisc = $mc->discountFor($cartTotalPrice);
             }
         }
         
@@ -181,3 +181,131 @@ function myCart($cookie){
     return compact('cartsCount','carts','cartTotalPrice','couponDisc','grandTotal','cartTax','shippingCharge','bonusCoin');
 }
 
+
+
+function bn2enNumber($number){
+    $search_array= array("১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯", "০");
+    $replace_array= array("1", "2", "3", "4", "5", "6", "7", "8", "9", "0");
+    return str_replace($search_array, $replace_array, $number);
+}
+
+// Normalises a Bangladeshi mobile to 8801XXXXXXXXX (13 digits)
+function bdMobile($mobile){
+    $mobile = preg_replace('/\D/', '', bn2enNumber((string)$mobile));
+    if(strlen($mobile) == 11 && substr($mobile, 0, 2) == '01'){
+        $mobile = '88'.$mobile;
+    }
+    return $mobile;
+}
+
+// The SMS URL in settings may use {number} {message} {username} {password} {senderid} placeholders;
+// without placeholders those values are appended as query parameters.
+function smsUrl($to, $msg){
+    $general = general();
+    $url = $general->sms_type == 'Masking' && $general->sms_url_masking
+        ? $general->sms_url_masking
+        : ($general->sms_url_nonmasking ?: $general->sms_url_masking);
+
+    if(!$url){
+        return null;
+    }
+
+    $values = [
+        '{number}' => $to,
+        '{message}' => $msg,
+        '{username}' => urlencode((string)$general->sms_username),
+        '{password}' => urlencode((string)$general->sms_password),
+        '{senderid}' => urlencode((string)$general->sms_senderid),
+    ];
+
+    if(strpos($url, '{number}') !== false){
+        return strtr($url, $values);
+    }
+
+    return $url.(strpos($url, '?') === false ? '?' : '&').http_build_query([
+        'username' => $general->sms_username,
+        'password' => $general->sms_password,
+        'senderid' => $general->sms_senderid,
+        'number' => $to,
+    ]).'&message='.$msg;
+}
+
+function sendSms($mobile, $message){
+    $to = bdMobile($mobile);
+    if(strlen($to) != 13){
+        return false;
+    }
+
+    $url = smsUrl($to, urlencode($message));
+    if(!$url){
+        return false;
+    }
+
+    try {
+        (new \GuzzleHttp\Client(['timeout' => 10]))->request('GET', $url);
+        return true;
+    } catch (\Exception $e) {
+        return false;
+    }
+}
+
+// Normalised Facebook post link used to detect re-use; null when it is not a Facebook post link
+function fbPostKey($url){
+    $url = trim((string)$url);
+    if($url === ''){
+        return null;
+    }
+    if(!preg_match('#^https?://#i', $url)){
+        $url = 'https://'.$url;
+    }
+
+    $parts = parse_url($url);
+    if(!$parts || empty($parts['host'])){
+        return null;
+    }
+
+    $host = strtolower($parts['host']);
+    $host = preg_replace('/^(www|m|web|mbasic|mobile|touch)\./', '', $host);
+    if($host == 'fb.com'){
+        $host = 'facebook.com';
+    }
+    if(!in_array($host, ['facebook.com', 'fb.watch'])){
+        return null;
+    }
+
+    $path = strtolower(rtrim($parts['path'] ?? '', '/'));
+    if($path === ''){
+        return null;
+    }
+
+    // Tracking params change per share; only these identify the post
+    $query = [];
+    if(!empty($parts['query'])){
+        parse_str($parts['query'], $params);
+        foreach(['story_fbid', 'fbid', 'id', 'v'] as $keep){
+            if(isset($params[$keep]) && is_scalar($params[$keep])){
+                $query[$keep] = strtolower($params[$keep]);
+            }
+        }
+    }
+
+    return substr($host.$path.($query ? '?'.http_build_query($query) : ''), 0, 191);
+}
+
+function fbDiscountFor($subtotal, $general = null){
+    $general = $general ?: general();
+    if(!$general->fb_discount_status || $general->fb_discount_amount <= 0){
+        return 0;
+    }
+
+    if($general->fb_discount_type == 'percentage'){
+        $discount = $subtotal * ($general->fb_discount_amount / 100);
+        if($general->fb_discount_max > 0){
+            $discount = min($discount, $general->fb_discount_max);
+        }
+    }else{
+        $discount = $general->fb_discount_amount;
+    }
+
+    return round(min($discount, $subtotal));
+}

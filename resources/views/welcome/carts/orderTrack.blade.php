@@ -145,11 +145,42 @@
                         @include(App\Models\General::first()->theme.'.customer.includes.ordershipedstatus')
                     @elseif($order->order_status=='delivered')
                         @include(App\Models\General::first()->theme.'.customer.includes.orderdeliveredstatus')
-                    @elseif($order->order_status=='Cancelled')
+                    @elseif($order->order_status=='cancelled')
                         @include(App\Models\General::first()->theme.'.customer.includes.ordercancelstatus')
                     @endif
                     @endif
                 </div>
+                
+                @if($order->advance_amount > 0)
+                <div style="margin: 10px 0;padding: 10px;border-radius: 6px;text-align: center;background: {{$order->advance_status=='verified' ? '#e8f5e9' : ($order->advance_status=='rejected' ? '#fdecea' : '#fff8e1')}};">
+                    অগ্রিম পেমেন্ট ৳{{en2bnNumber(number_format($order->advance_amount))}}:
+                    @if($order->advance_status=='verified')
+                    <b style="color: #2e7d32;">যাচাই হয়েছে ✓</b>
+                    @elseif($order->advance_status=='rejected')
+                    <b style="color: #c62828;">যাচাই করা যায়নি</b>
+                    @if($order->advance_note)<br><small>কারণ: {{$order->advance_note}}</small>@endif
+                    @else
+                    <b style="color: #f57f17;">যাচাই চলছে</b>
+                    @endif
+                    @if($order->advance_status!='rejected')
+    <br><small>ডেলিভারির সময় দিতে হবে: ৳{{en2bnNumber(number_format($order->advance_status=='verified' ? $order->due_amount : max($order->grand_total - $order->advance_amount, 0)))}}</small>
+                    @endif
+                </div>
+                @endif
+                
+                @if($order->fb_post_status)
+                <div style="margin: 10px 0;padding: 10px;border-radius: 6px;text-align: center;background: #e7f0fd;">
+                    Facebook পোস্ট ডিসকাউন্ট:
+                    @if($order->fb_post_status=='approved')
+                    <b style="color: #2e7d32;">অনুমোদিত, ৳{{en2bnNumber(number_format($order->fb_discount))}} ছাড় দেওয়া হয়েছে ✓</b>
+                    @elseif($order->fb_post_status=='rejected')
+                    <b style="color: #c62828;">অনুমোদিত হয়নি</b>
+                    @if($order->fb_note)<br><small>কারণ: {{$order->fb_note}}</small>@endif
+                    @else
+                    <b style="color: #1565c0;">যাচাই চলছে</b>
+                    @endif
+                </div>
+                @endif
                 
                 <center>
                     <a href="{{ route('customer.orderDetails',$order->id) }}" class="btn btn-sm btn-success" style="background: #bf203d;border-color: #bf203d;"> View Invoice</a>

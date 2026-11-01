@@ -66,7 +66,7 @@ class CartMiddleware
 
                     if($mc)
                     {
-                      $couponDisc = $cartTotalPrice * ($mc->discount / 100);
+                      $couponDisc = $mc->discountFor($cartTotalPrice);
                     }
                 }
 

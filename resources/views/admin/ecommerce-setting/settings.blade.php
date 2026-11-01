@@ -48,6 +48,12 @@
                                      <li class="nav-item">
                                          <a class="nav-link {{$type=='general'?'active':''}}" href="{{route('admin.ecommerceSetting',['type'=>'general'])}}"><i class="fas fa-cog"></i> General</a>
                                      </li>
+                                     <li class="nav-item">
+                                         <a class="nav-link {{$type=='delivery'?'active':''}}" href="{{route('admin.ecommerceSetting',['type'=>'delivery'])}}"><i class="fas fa-truck"></i> Delivery &amp; Payment</a>
+                                     </li>
+                                     <li class="nav-item">
+                                         <a class="nav-link {{$type=='facebook'?'active':''}}" href="{{route('admin.ecommerceSetting',['type'=>'facebook'])}}"><i class="fab fa-facebook"></i> Facebook Post Discount</a>
+                                     </li>
                                      <!--<li class="nav-item">-->
                                      <!--    <a class="nav-link {{$type=='shipping'?'active':''}}"  href="{{route('admin.ecommerceSetting',['type'=>'shipping'])}}" ><i class="fas fa-truck"></i> Shipping</a>-->
                                      <!--</li>-->
@@ -138,6 +144,175 @@
                                          
                                          
                                      </div>
+                                     <div class="tab-pane {{$type=='delivery'?'active':''}}" >
+                                         @if($type=='delivery')
+                                         <form action="{{route('admin.ecommerceSettingPost',['type'=>'delivery'])}}" method="post" enctype="multipart/form-data">
+                                         @csrf
+                                         <div class="row">
+                                            <div class="col-md-7">
+                                                <h5><b>Delivery Zones (Checkout Sector)</b></h5>
+                                                <p class="text-muted" style="font-size: 13px;">Customer selects one of these at checkout, then district and upazila. The charge is added to the order automatically.</p>
+                                                <div class="table-responsive">
+                                                    <table class="table table-bordered">
+                                                        <tr>
+                                                            <th>Zone</th>
+                                                            <th>Covers</th>
+                                                            <th style="width: 150px;">Default Charge ({{general()->currency}})</th>
+                                                            <th style="width: 80px;">Active</th>
+                                                        </tr>
+                                                        @forelse($deliveryZones as $zone)
+                                                        <tr>
+                                                            <td>{{$zone->name}}<br><small>{{$zone->bn_name}}</small><br>
+                                                                <a href="{{route('admin.deliveryZoneDistricts',$zone->id)}}" class="badge badge-info"><i class="fa fa-edit"></i> District Charges{{$zone->districtCharges->count() ? ' ('.$zone->districtCharges->count().' custom)' : ''}}</a>
+                                                            </td>
+                                                            <td>
+                                                                <small>
+                                                                {{$zone->division?$zone->division->name:''}} Division
+                                                                @if($zone->scope=='city') - Dhaka metro thanas only @elseif($zone->scope=='outer') - without Dhaka metro thanas @endif
+                                                                </small>
+                                                            </td>
+                                                            <td style="padding:3px;">
+                                                                <input type="number" min="0" step="1" class="form-control form-control-sm" name="charges[{{$zone->id}}]" value="{{(float)$zone->shipping_charge}}">
+                                                            </td>
+                                                            <td style="text-align: center;">
+                                                                <input type="checkbox" name="statuses[{{$zone->id}}]" value="active" {{$zone->status=='active'?'checked':''}}>
+                                                            </td>
+                                                        </tr>
+                                                        @empty
+                                                        <tr>
+                                                            <td colspan="4" class="text-danger">No delivery zones found. Run: php artisan db:seed --class=DeliveryZoneSeeder</td>
+                                                        </tr>
+                                                        @endforelse
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-5">
+                                                <h5><b>Payment Setting</b></h5>
+                                                <table class="table table-borderless">
+                                                    <tr>
+                                                        <th>Cash On Delivery Advance (% of delivery charge)</th>
+                                                        <td style="padding:3px;">
+                                                            <input type="number" min="0" max="100" class="form-control form-control-sm" name="cod_advance_percent" value="{{general()->cod_advance_percent}}">
+                                                            @if ($errors->has('cod_advance_percent'))
+                                                            <p style="color: red;margin: 0;font-size: 10px;">{{ $errors->first('cod_advance_percent') }}</p>
+                                                            @endif
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Free Delivery on Full Advance</th>
+                                                        <td style="padding:3px;">
+                                                            <div class="custom-control custom-switch">
+                                                                <input type="checkbox" class="custom-control-input" id="freeDeliverySwitch" name="full_advance_free_delivery" value="1" {{general()->full_advance_free_delivery?'checked':''}}>
+                                                                <label class="custom-control-label" for="freeDeliverySwitch">{{general()->full_advance_free_delivery?'On':'Off'}}</label>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Bangla QR / Merchant Number</th>
+                                                        <td style="padding:3px;">
+                                                            <input type="text" class="form-control form-control-sm" name="bangla_qr_number" value="{{general()->bangla_qr_number}}" placeholder="Shown under the QR at checkout">
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Bangla QR Image</th>
+                                                        <td style="padding:3px;">
+                                                            @if(general()->bangla_qr_image)
+                                                            <img src="{{asset(general()->bangla_qr_image)}}" style="max-width: 150px;display: block;margin-bottom: 5px;">
+                                                            <label style="font-size: 13px;"><input type="checkbox" name="remove_qr" value="1"> Remove</label>
+                                                            @endif
+                                                            <input type="file" name="bangla_qr_image" class="form-control form-control-sm" accept="image/*">
+                                                            @if ($errors->has('bangla_qr_image'))
+                                                            <p style="color: red;margin: 0;font-size: 10px;">{{ $errors->first('bangla_qr_image') }}</p>
+                                                            @endif
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </div>
+                                            <div class="col-md-12 mb-1">
+                                                <button type="submit" class="btn btn-info" style="padding:5px 10px;">Update</button>
+                                            </div>
+                                         </div>
+                                         </form>
+                                         @endif
+                                     </div>
+                                     <div class="tab-pane {{$type=='facebook'?'active':''}}" >
+                                         @if($type=='facebook')
+                                         <form action="{{route('admin.ecommerceSettingPost',['type'=>'facebook'])}}" method="post">
+                                         @csrf
+                                         <div class="row">
+                                            <div class="col-md-7">
+                                                <p class="text-muted" style="font-size: 13px;">
+                                                    Customer pastes the link of a Facebook post about a product they already received, with your page tagged or as collaborator.
+                                                    Admin checks it in the order panel; on approve the discount is taken off the order total.
+                                                </p>
+                                                <table class="table table-borderless">
+                                                    <tr>
+                                                        <th style="width: 45%;">Feature</th>
+                                                        <td style="padding:3px;">
+                                                            <div class="custom-control custom-switch">
+                                                                <input type="checkbox" class="custom-control-input" id="fbDiscountSwitch" name="fb_discount_status" value="1" {{general()->fb_discount_status?'checked':''}}>
+                                                                <label class="custom-control-label" for="fbDiscountSwitch">{{general()->fb_discount_status?'On':'Off'}}</label>
+                                                            </div>
+                                                            <small class="text-muted">Off = the link field is hidden at checkout.</small>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Discount</th>
+                                                        <td style="padding:3px;">
+                                                            <div class="input-group">
+                                                                <input type="number" min="0" step="0.01" class="form-control form-control-sm" name="fb_discount_amount" value="{{(float)general()->fb_discount_amount}}">
+                                                                <select class="form-control form-control-sm" name="fb_discount_type">
+                                                                    <option value="flat" {{general()->fb_discount_type!='percentage'?'selected':''}}>Flat ({{general()->currency}})</option>
+                                                                    <option value="percentage" {{general()->fb_discount_type=='percentage'?'selected':''}}>Percentage (%) of products</option>
+                                                                </select>
+                                                            </div>
+                                                            @if ($errors->has('fb_discount_amount'))
+                                                            <p style="color: red;margin: 0;font-size: 11px;">{{ $errors->first('fb_discount_amount') }}</p>
+                                                            @endif
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Maximum Discount ({{general()->currency}}) <small>for percentage, 0 = no limit</small></th>
+                                                        <td style="padding:3px;">
+                                                            <input type="number" min="0" step="1" class="form-control form-control-sm" name="fb_discount_max" value="{{(float)general()->fb_discount_max}}">
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Minimum Post Age (days, max 30)</th>
+                                                        <td style="padding:3px;">
+                                                            <input type="number" min="1" max="30" class="form-control form-control-sm" name="fb_post_min_days" value="{{general()->fb_post_min_days}}">
+                                                            @if ($errors->has('fb_post_min_days'))
+                                                            <p style="color: red;margin: 0;font-size: 11px;">{{ $errors->first('fb_post_min_days') }}</p>
+                                                            @endif
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Facebook Page Name <small>(shown to customer)</small></th>
+                                                        <td style="padding:3px;">
+                                                            <input type="text" class="form-control form-control-sm" name="fb_page_name" value="{{general()->fb_page_name}}" placeholder="{{general()->title}}">
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Full Advance Orders</th>
+                                                        <td style="padding:3px;">
+                                                            <select class="form-control form-control-sm" name="fb_full_advance_rule">
+                                                                <option value="refund" {{general()->fb_full_advance_rule!='not_allowed'?'selected':''}}>Allowed - discount is refunded to customer after approve</option>
+                                                                <option value="not_allowed" {{general()->fb_full_advance_rule=='not_allowed'?'selected':''}}>Not allowed - hide link field for full advance</option>
+                                                            </select>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th></th>
+                                                        <td style="padding:3px;">
+                                                            <button type="submit" class="btn btn-info" style="padding:5px 10px;">Update</button>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </div>
+                                         </div>
+                                         </form>
+                                         @endif
+                                     </div>
                                      <div class="tab-pane {{$type=='shipping'?'active':''}}" >
 
                                          <a href="{{route('admin.ecommerceSettingCreate',$type)}}" class="btn btn-success" style="padding:5px 10px;"><i class="fa fa-plus"></i> Add Zone</a><br><br>
@@ -199,6 +374,12 @@
 @endsection @push('js')
 
 <script>
+    $('#fbDiscountSwitch').change(function(){
+        $(this).next('label').text(this.checked ? 'On' : 'Off');
+    });
+    $('#freeDeliverySwitch').change(function(){
+        $(this).next('label').text(this.checked ? 'On' : 'Off');
+    });
 
           
 

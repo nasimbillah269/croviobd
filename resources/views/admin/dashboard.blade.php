@@ -1,189 +1,375 @@
 @extends('admin.layouts.app')
 @section('title')
-<title>Dashbaord - {{general()->title}} | {{general()->subtitle}}</title>
+<title>Dashboard - {{general()->title}} | {{general()->subtitle}}</title>
 @endsection
 
-@push('css')
-<style type="text/css">
+@php
+    $currency = general()->currency;
+    $money = function($amount) use ($currency) { return $currency.' '.number_format($amount); };
+    $statusMeta = [
+        'pending'   => ['Pending',   '#f59e0b', 'warning'],
+        'confirmed' => ['Confirmed', '#4f46e5', 'primary'],
+        'shipped'   => ['Shipped',   '#0ea5e9', 'info'],
+        'delivered' => ['Delivered', '#10b981', 'success'],
+        'cancelled' => ['Cancelled', '#ef4444', 'danger'],
+    ];
+    $statusTotal = $statusCounts->only(array_keys($statusMeta))->sum();
+    $hour = (int)Carbon\Carbon::now()->format('H');
+    $greeting = $hour < 12 ? 'Good morning' : ($hour < 17 ? 'Good afternoon' : 'Good evening');
+@endphp
 
-</style>
-@endpush
 @section('contents')
-<div class="content-header row">
-   </div>
-   <div class="content-body">
-    <!-- Grouped multiple cards for statistics starts here -->
-  <div class="row grouped-multiple-statistics-card">
-     <div class="col-12">
-       <div class="card">
-         <div class="card-body">
-           <div class="row">
-             <div class="col-lg-6 col-xl-3 col-sm-6 col-12">
-               <div class="d-flex align-items-start mb-sm-1 mb-xl-0 border-right-blue-grey border-right-lighten-5">
-                 <span class="card-icon primary d-flex justify-content-center mr-3">
-                   <i class="fas fa-stream customize-icon font-large-2 p-1"></i>
-                 </span>
-                 <div class="stats-amount mr-3">
-                   <h3 class="heading-text text-bold-600">{{$reports['services']}}</h3>
-                   <p class="sub-heading">Services </p>
-                 </div>
-                 <span class="inc-dec-percentage">
-                   <small class="info"><i class="fa fa-arrow-up"></i> 30 Days</small>
-                 </span>
-               </div>
-             </div>
-             <div class="col-lg-6 col-xl-3 col-sm-6 col-12">
-               <div class="d-flex align-items-start mb-sm-1 mb-xl-0 border-right-blue-grey border-right-lighten-5">
-                 <span class="card-icon danger d-flex justify-content-center mr-3">
-                   <i class="fas fa-copy customize-icon font-large-2 p-1"></i>
-                 </span>
-                 <div class="stats-amount mr-3">
-                   <h3 class="heading-text text-bold-600">{{$reports['posts']}}</h3>
-                   <p class="sub-heading">Posts</p>
-                 </div>
-                 <span class="inc-dec-percentage">
-                   <small class="success"><i class="fa fa-arrow-up"></i> 30 Days </small>
-                 </span>
-               </div>
-             </div>
-             <div class="col-lg-6 col-xl-3 col-sm-6 col-12">
-               <div class="d-flex align-items-start border-right-blue-grey border-right-lighten-5">
-                 <span class="card-icon success d-flex justify-content-center mr-3">
-                   <i class="fas fa-file-alt customize-icon font-large-2 p-1"></i>
-                 </span>
-                 <div class="stats-amount mr-3">
-                   <h3 class="heading-text text-bold-600">{{$reports['pages']}}</h3>
-                   <p class="sub-heading">Pages </p>
-                 </div>
-                 <span class="inc-dec-percentage">
-                   <small class="primary"><i class="fa fa-arrow-up"></i> Total </small>
-                 </span>
-               </div>
-             </div>
-             <div class="col-lg-6 col-xl-3 col-sm-6 col-12">
-               <div class="d-flex align-items-start">
-                 <span class="card-icon warning d-flex justify-content-center mr-3">
-                   <i class="fa fa-chess-rook customize-icon font-large-2 p-1"></i>
-                 </span>
-                 <div class="stats-amount mr-3">
-                   <h3 class="heading-text text-bold-600">{{$reports['brands']}}</h3>
-                   <p class="sub-heading">Brands </p>
-                 </div>
-                 <span class="inc-dec-percentage">
-                   <small class="success"><i class="fa fa-arrow-up"></i> Total</small>
-                 </span>
-               </div>
-             </div>
-           </div>
-         </div>
-       </div>
-     </div>
-   </div>
-   <!-- Grouped multiple cards for statistics ends here -->
+<div class="content-body">
 
+    <div class="pa-welcome">
+        <div>
+            <h2>{{$greeting}}, {{Str::before(Auth::user()->name, ' ') ?: Auth::user()->name}} 👋</h2>
+            <p>Here is what is happening with your store today.</p>
+        </div>
+        <span class="pa-date"><i class="far fa-calendar"></i> {{Carbon\Carbon::now()->format('l, d M Y')}}</span>
+    </div>
 
+    {{-- KPI tiles --}}
+    <div class="row">
+        <div class="col-xl-3 col-md-6">
+            <div class="pa-kpi">
+                <div class="pa-kpi-top">
+                    <span class="pa-kpi-label">Revenue this month</span>
+                    <span class="pa-kpi-icon pa-tone-primary"><i class="fas fa-wallet"></i></span>
+                </div>
+                <div class="pa-kpi-value">{{$money($stats['monthSales'])}}</div>
+                <div class="pa-kpi-foot">
+                    @if($stats['monthTrend'] === null)
+                    <span class="pa-trend up">New</span>
+                    @else
+                    <span class="pa-trend {{$stats['monthTrend'] > 0 ? 'up' : ($stats['monthTrend'] < 0 ? 'down' : 'flat')}}">{{$stats['monthTrend'] > 0 ? '+' : ''}}{{$stats['monthTrend']}}%</span>
+                    @endif
+                    vs same days last month
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="pa-kpi">
+                <div class="pa-kpi-top">
+                    <span class="pa-kpi-label">Orders today</span>
+                    <span class="pa-kpi-icon pa-tone-success"><i class="fas fa-shopping-bag"></i></span>
+                </div>
+                <div class="pa-kpi-value">{{number_format($stats['todayOrders'])}}</div>
+                <div class="pa-kpi-foot">
+                    @if($stats['todayTrend'] === null)
+                    <span class="pa-trend up">New</span>
+                    @else
+                    <span class="pa-trend {{$stats['todayTrend'] > 0 ? 'up' : ($stats['todayTrend'] < 0 ? 'down' : 'flat')}}">{{$stats['todayTrend'] > 0 ? '+' : ''}}{{$stats['todayTrend']}}%</span>
+                    @endif
+                    vs yesterday &middot; {{$money($stats['todaySales'])}}
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <a href="{{route('admin.orders','pending')}}" style="text-decoration: none;">
+            <div class="pa-kpi">
+                <div class="pa-kpi-top">
+                    <span class="pa-kpi-label">Pending orders</span>
+                    <span class="pa-kpi-icon pa-tone-warning"><i class="fas fa-hourglass-half"></i></span>
+                </div>
+                <div class="pa-kpi-value">{{number_format($stats['pending'])}}</div>
+                <div class="pa-kpi-foot">{{number_format($stats['toShip'])}} confirmed, waiting to ship</div>
+            </div>
+            </a>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="pa-kpi">
+                <div class="pa-kpi-top">
+                    <span class="pa-kpi-label">Customers</span>
+                    <span class="pa-kpi-icon pa-tone-purple"><i class="fas fa-users"></i></span>
+                </div>
+                <div class="pa-kpi-value">{{number_format($stats['customers'])}}</div>
+                <div class="pa-kpi-foot"><span class="pa-trend {{$stats['newCustomers'] ? 'up' : 'flat'}}">+{{number_format($stats['newCustomers'])}}</span> new this month</div>
+            </div>
+        </div>
+    </div>
 
-   <!-- active users and my task timeline cards starts here -->
-   <div class="row match-height">
-       <!-- active users card -->
-       <div class="col-xl-12 col-lg-12">
-       <div class="card active-users">
-         <div class="card-header border-0">
-           <h4 class="card-title">Latest Products</h4>
-         </div>
-         <div class="card-content">
-          {{--
-          <div>{!! DNS1D::getBarcodeHTML('4445645656', 'C39',3,33,'green', true) !!}</div><br />
-          <div>{!! DNS1D::getBarcodeHTML('4445645656', 'POSTNET') !!}</div><br />
-                <div>{!! DNS1D::getBarcodeHTML('4445645656', 'PHARMA') !!}</div><br />
-                <div>{!! DNS2D::getBarcodeHTML('4445645656', 'QRCODE') !!}</div><br /><hr><br>
+    {{-- Sales chart + needs attention --}}
+    <div class="row">
+        <div class="col-xl-8">
+            <div class="card">
+                <div class="card-header border-0 pb-0">
+                    <div class="pa-card-head">
+                        <div>
+                            <h4 class="card-title">Sales overview</h4>
+                            <div class="pa-sub">Last 30 days, cancelled orders excluded</div>
+                        </div>
+                        <div class="pa-stat-inline">
+                            <div><span>Revenue</span><b>{{$money($chart['totalAmount'])}}</b></div>
+                            <div><span>Orders</span><b>{{number_format($chart['totalOrders'])}}</b></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body pt-1">
+                    <div class="pa-chart-wrap">
+                        <div id="paSalesChart" style="min-height: 300px;"></div>
+                        @if($chart['totalOrders'] == 0)
+                        <div class="pa-chart-empty">
+                            <i class="fas fa-chart-area"></i>
+                            <b>No sales in the last 30 days</b>
+                            New orders will show up here day by day.
+                        </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title">Needs your attention</h4>
+                </div>
+                <div class="card-body py-0">
+                    <ul class="pa-action-list">
+                        <li>
+                            <a href="{{route('admin.orders','pending')}}">
+                                <span class="pa-action-icon pa-tone-warning"><i class="fas fa-phone-alt"></i></span>
+                                <span><span class="pa-action-title d-block">Confirm pending orders</span><span class="pa-action-sub">Call customers and confirm</span></span>
+                                <span class="pa-action-count {{$stats['pending'] ? '' : 'zero'}}">{{$stats['pending']}}</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{route('admin.orders','advance-pending')}}">
+                                <span class="pa-action-icon pa-tone-primary"><i class="fas fa-qrcode"></i></span>
+                                <span><span class="pa-action-title d-block">Verify advance payments</span><span class="pa-action-sub">Match TrxID with statement</span></span>
+                                <span class="pa-action-count {{$stats['advancePending'] ? '' : 'zero'}}">{{$stats['advancePending']}}</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{route('admin.orders','fb-pending')}}">
+                                <span class="pa-action-icon pa-tone-info"><i class="fab fa-facebook-f"></i></span>
+                                <span><span class="pa-action-title d-block">Review Facebook posts</span><span class="pa-action-sub">Approve or reject discount</span></span>
+                                <span class="pa-action-count {{$stats['fbPending'] ? '' : 'zero'}}">{{$stats['fbPending']}}</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{route('admin.orders','confirmed')}}">
+                                <span class="pa-action-icon pa-tone-success"><i class="fas fa-truck"></i></span>
+                                <span><span class="pa-action-title d-block">Ready to ship</span><span class="pa-action-sub">Confirmed orders to hand over</span></span>
+                                <span class="pa-action-count {{$stats['toShip'] ? '' : 'zero'}}">{{$stats['toShip']}}</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{route('admin.stockList')}}">
+                                <span class="pa-action-icon pa-tone-danger"><i class="fas fa-box-open"></i></span>
+                                <span><span class="pa-action-title d-block">Low stock products</span><span class="pa-action-sub">5 or fewer left</span></span>
+                                <span class="pa-action-count {{$stats['lowStock'] ? '' : 'zero'}}">{{$stats['lowStock']}}</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
 
-               <div> {!! DNS1D::getBarcodeHTML('Md Rabiu Karim', 'C128',5,250, 'green', true) !!} </div><br>
-            --}}
-           <div id="audience-list-scroll" class="table-responsive position-relative">
+    {{-- Latest orders + status breakdown --}}
+    <div class="row">
+        <div class="col-xl-8">
+            <div class="card">
+                <div class="card-header">
+                    <div class="pa-card-head">
+                        <h4 class="card-title">Latest orders</h4>
+                        <a href="{{route('admin.orders')}}" class="pa-link">View all <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover pa-table">
+                        <thead>
+                            <tr>
+                                <th>Invoice</th>
+                                <th>Customer</th>
+                                <th>Date</th>
+                                <th>Payment</th>
+                                <th>Status</th>
+                                <th class="text-right">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($latestOrders as $order)
+                            @php($meta = $statusMeta[$order->order_status] ?? [ucfirst($order->order_status), '#64748b', 'secondary'])
+                            <tr>
+                                <td><a href="{{route('admin.ordersManage',$order->id)}}"><b>#{{$order->invoice}}</b></a></td>
+                                <td class="pa-cust"><b>{{Str::limit($order->name,22)}}</b><span>{{$order->mobile}}</span></td>
+                                <td>{{$order->created_at->format('d M, h:i A')}}</td>
+                                <td>
+                                    @if($order->payment_status=='paid')
+                                    <span class="badge badge-success">Paid</span>
+                                    @elseif($order->payment_status=='partial')
+                                    <span class="badge badge-warning">Partial</span>
+                                    @else
+                                    <span class="badge badge-secondary">Unpaid</span>
+                                    @endif
+                                </td>
+                                <td><span class="badge badge-{{$meta[2]}}">{{$meta[0]}}</span></td>
+                                <td class="text-right"><b style="color: var(--pa-text);">{{$money($order->grand_total)}}</b></td>
+                            </tr>
+                            @empty
+                            <tr><td colspan="6"><div class="pa-empty"><i class="fas fa-inbox"></i>No orders yet</div></td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4">
+            <div class="card">
+                <div class="card-header">
+                    <div class="pa-card-head">
+                        <h4 class="card-title">Order status</h4>
+                        <span class="pa-sub">All time</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="paStatusChart"></div>
+                    <ul class="pa-legend">
+                        @foreach($statusMeta as $key=>$meta)
+                        <li>
+                            <span><i class="dot" style="background: {{$meta[1]}};"></i> {{$meta[0]}}</span>
+                            <span><b>{{number_format($statusCounts[$key] ?? 0)}}</b> <small class="text-muted">{{$statusTotal ? round(($statusCounts[$key] ?? 0)*100/$statusTotal) : 0}}%</small></span>
+                        </li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
 
-             <table class="table table-striped table-bordered table-hover">
-                  <thead>
-                      <tr>
-                          <th style="min-width: 60px;">SL</th>
-                          <th style="min-width: 350px;">Product Name</th>
-                          <th style="min-width: 80px;">Image</th>
-                          <th style="min-width: 200px;">Catagory</th>
-                          <th style="min-width: 80px;">Status</th>
-                          <th style="min-width: 160px;">Action/Author</th>
-                      </tr>
-                  </thead>
-                  <tbody>
-                      
-                      @foreach($products as $i=>$product)
-                      <tr>
-                          <td>
-                              {{$products->currentpage()==1?$i+1:$i+($products->perpage()*($products->currentpage() - 1))+1}}
-                          </td>
-                          <td>
-                              <span><a href="{{route('productView',$product->slug?:'no-slug')}}" target="_blank">{{$product->name}}</a></span>
-                              <br/>
-                              <span style="color: #ccc;"><b style="color: #1ab394;">{{general()->currency}}</b> {{priceFormat($product->final_price)}}</span>
+    {{-- Top products + low stock + catalog --}}
+    <div class="row">
+        <div class="col-xl-5 col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <div class="pa-card-head">
+                        <h4 class="card-title">Top selling products</h4>
+                        <a href="{{route('admin.products')}}" class="pa-link">All products <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+                <div class="card-body py-1">
+                    @forelse($topProducts as $item)
+                    @php($product = $topProductModels->get($item->product_id))
+                    <div class="pa-mini-product">
+                        <img src="{{asset($product ? $product->image() : general()->favicon())}}" alt="">
+                        <div>
+                            <div class="pa-mp-name">{{Str::limit($product ? $product->name : $item->product_name, 42)}}</div>
+                            <div class="pa-mp-meta">{{number_format($item->qty)}} sold</div>
+                        </div>
+                        <div class="pa-mp-right"><b>{{$money($item->amount)}}</b><span class="pa-mp-meta">revenue</span></div>
+                    </div>
+                    @empty
+                    <div class="pa-empty"><i class="fas fa-chart-bar"></i>No sales yet</div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <div class="pa-card-head">
+                        <h4 class="card-title">Low stock</h4>
+                        <a href="{{route('admin.stockList')}}" class="pa-link">Stock list <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+                <div class="card-body py-1">
+                    @forelse($lowStockProducts as $product)
+                    <div class="pa-mini-product">
+                        <img src="{{asset($product->image())}}" alt="">
+                        <div>
+                            <div class="pa-mp-name">{{Str::limit($product->name, 36)}}</div>
+                            <div class="pa-mp-meta">{{$money($product->final_price)}}</div>
+                        </div>
+                        <div class="pa-mp-right">
+                            <span class="badge {{$product->quantity <= 0 ? 'badge-danger' : 'badge-warning'}}">{{$product->quantity <= 0 ? 'Out of stock' : (int)$product->quantity.' left'}}</span>
+                            <a href="{{route('admin.productsEdit',$product->id)}}" class="d-block pa-mp-meta mt-1">Restock</a>
+                        </div>
+                    </div>
+                    @empty
+                    <div class="pa-empty"><i class="fas fa-check-circle" style="color: var(--pa-success);"></i>All products are well stocked</div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title">Catalog</h4>
+                </div>
+                <div class="card-body py-0">
+                    <ul class="pa-action-list">
+                        <li><a href="{{route('admin.products')}}"><span class="pa-action-icon pa-tone-primary"><i class="fas fa-box"></i></span><span class="pa-action-title">Products</span><span class="pa-action-count">{{number_format($stats['products'])}}</span></a></li>
+                        <li><a href="{{route('admin.posts')}}"><span class="pa-action-icon pa-tone-info"><i class="fas fa-file-alt"></i></span><span class="pa-action-title">Blog posts</span><span class="pa-action-count">{{number_format($stats['posts'])}}</span></a></li>
+                        <li><a href="{{route('admin.pages')}}"><span class="pa-action-icon pa-tone-success"><i class="fas fa-copy"></i></span><span class="pa-action-title">Pages</span><span class="pa-action-count">{{number_format($stats['pages'])}}</span></a></li>
+                        <li><a href="{{route('admin.brands')}}"><span class="pa-action-icon pa-tone-warning"><i class="fas fa-tags"></i></span><span class="pa-action-title">Brands</span><span class="pa-action-count">{{number_format($stats['brands'])}}</span></a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                              @if($product->fetured==true)
-                              <span><i class="fa fa-star" style="color: #1ab394;"></i></span>
-                              @endif
-
-                              @if($product->brand)
-                              <span style="color: #ccc;"><b style="color: #1ab394;">Brand:</b> {{$product->brand->name}}</span>
-                              @endif
-
-                              @if($product->fetured==true)
-                              <span style="color: #ccc;"><b style="color: #1ab394;">Sup:</b> Sukd skdj sd s</span>
-                              @endif
-                              <span style="color: #ccc;"><i class="fa fa-calendar" style="color: #1ab394;"></i> {{$product->created_at->format('d-m-Y')}}</span>
-                          </td>
-                          <td style="padding: 5px; text-align: center;">
-                              <img src="{{asset($product->image())}}" style="max-width: 70px; max-height: 50px;" />
-                          </td>
-                          <td>
-                              @foreach($product->productCategories as $i=>$ctg)
-
-                               {{$i==0?'':'-'}} {{$ctg->name}} 
-
-                               @endforeach
-                          </td>
-                          <td>
-                              @if($product->status=='active')
-                              <span class="badge badge-success">Active </span>
-                              @elseif($product->status=='inactive')
-                              <span class="badge badge-danger">Inactive </span>
-                              @else
-                              <span class="badge badge-danger">Draft </span>
-                              @endif 
-                          </td>
-                          <td style="padding: 5px;">
-                              <a href="{{route('admin.productsEdit',$product->id)}}" class="btn btn-sm btn-info">Edit</a>
-                              <a href="{{route('admin.productsView',$product->id)}}" class="btn btn-sm btn-success">View</a>
-                              @if(myRole())
-                              @isset(json_decode(myRole()->permission, true)['products']['delete'])
-                              <a href="{{route('admin.productsDelete',$product->id)}}" class="btn btn-sm btn-danger" onclick="return confirm('Are You Want To Delete?')">Delete</a>
-                              @endisset
-                              @endif
-                              <br />
-                              <span style="color: #ccc;">
-                                  <i class="fa fa-user" style="color: #1ab394;"></i>
-                                  {{Str::limit($product->user?$product->user->name:'No Author',15)}}
-                              </span>
-                          </td>
-                      </tr>
-                      @endforeach
-                  </tbody>
-              </table>
-
-           </div>
-         </div>
-       </div>
-     </div>
-
-   </div>
 </div>
 @endsection
-@push('js')
 
+@push('js')
+<script>
+    (function(){
+        if(typeof ApexCharts === 'undefined'){ return; }
+        var font = "'Inter', 'Hind Siliguri', sans-serif";
+        var currency = @json($currency);
+        var dates = @json($chart['dates']);
+        var paOrderMax = Math.max(1, Math.max.apply(null, @json($chart['orders'])));
+        function paPoints(values){ return values.map(function(v, i){ return [dates[i], v]; }); }
+
+        new ApexCharts(document.querySelector('#paSalesChart'), {
+            chart: { type: 'area', height: 300, fontFamily: font, toolbar: { show: false }, zoom: { enabled: false } },
+            series: [
+                { name: 'Revenue', type: 'area', data: paPoints(@json($chart['amount'])) },
+                { name: 'Orders', type: 'line', data: paPoints(@json($chart['orders'])) }
+            ],
+            colors: ['#4f46e5', '#10b981'],
+            stroke: { width: [2.5, 2], curve: 'smooth' },
+            fill: { type: ['gradient', 'solid'], gradient: { shadeIntensity: 1, opacityFrom: .28, opacityTo: .02, stops: [0, 95] } },
+            dataLabels: { enabled: false },
+            markers: { size: 0, hover: { size: 5 } },
+            grid: { borderColor: '#eef1f6', strokeDashArray: 4, padding: { left: 8, right: 8 } },
+            xaxis: {
+                type: 'datetime',
+                axisBorder: { show: false }, axisTicks: { show: false }, tooltip: { enabled: false },
+                labels: { style: { colors: '#94a3b8', fontSize: '11px' }, datetimeUTC: false, format: 'dd MMM' }
+            },
+            yaxis: [
+                { labels: { style: { colors: '#94a3b8', fontSize: '11px' }, formatter: function(v){ return v >= 1000 ? (v/1000).toFixed(v >= 10000 ? 0 : 1) + 'k' : Math.round(v); } } },
+                { opposite: true, min: 0, max: paOrderMax, tickAmount: Math.min(paOrderMax, 5), labels: { style: { colors: '#94a3b8', fontSize: '11px' }, formatter: function(v){ return Math.round(v); } } }
+            ],
+            legend: { position: 'top', horizontalAlign: 'left', fontSize: '12px', markers: { radius: 3 }, itemMargin: { horizontal: 10 } },
+            tooltip: {
+                shared: true, intersect: false,
+                x: { format: 'dd MMM yyyy' },
+                y: [
+                    { formatter: function(v){ return currency + ' ' + Math.round(v).toLocaleString(); } },
+                    { formatter: function(v){ return v + ' orders'; } }
+                ]
+            }
+        }).render();
+
+        new ApexCharts(document.querySelector('#paStatusChart'), {
+            chart: { type: 'donut', height: 230, fontFamily: font },
+            series: @json(collect(array_keys($statusMeta))->map(function($k) use ($statusCounts){ return (int)($statusCounts[$k] ?? 0); })->values()),
+            labels: @json(collect($statusMeta)->pluck(0)->values()),
+            colors: @json(collect($statusMeta)->pluck(1)->values()),
+            stroke: { width: 3, colors: ['#fff'] },
+            dataLabels: { enabled: false },
+            legend: { show: false },
+            plotOptions: { pie: { donut: { size: '74%', labels: {
+                show: true,
+                value: { fontSize: '24px', fontWeight: 750, color: '#0f172a', offsetY: 4 },
+                total: { show: true, label: 'Orders', fontSize: '12px', color: '#64748b', formatter: function(w){ return w.globals.seriesTotals.reduce(function(a, b){ return a + b; }, 0).toLocaleString(); } }
+            } } } },
+            tooltip: { y: { formatter: function(v){ return v + ' orders'; } } }
+        }).render();
+    })();
+</script>
 @endpush
