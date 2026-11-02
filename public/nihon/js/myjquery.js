@@ -8,22 +8,24 @@ $(document).ready(function(){
   
   /** Sticky Header js **/
 
-  var header = $('.sticky-header');
-  var logo = $('.top-header');
-  var middle = $('.middle-header');
-    var win = $(window);
-    win.on('scroll', function() {
-        var scroll = win.scrollTop();
-        if (scroll < 250){
-            header.removeClass('stick');
-            logo.removeClass('hidesection');
-            middle.removeClass('hidesection');
-        } else {
-            header.addClass('stick');
-            logo.addClass('hidesection');
-            middle.addClass('hidesection');
-        }
-    });
+  // header stays in place via CSS position:sticky; this only toggles the
+  // "scrolled" look (shadow, smaller logo) and is throttled to one update per frame
+  var header = $('.sticky-header, .mobileHeader');
+  var win = $(window);
+  var ticking = false;
+
+  function updateHeader() {
+      header.toggleClass('stick', win.scrollTop() > 40);
+      ticking = false;
+  }
+
+  win.on('scroll', function() {
+      if (!ticking) {
+          ticking = true;
+          window.requestAnimationFrame(updateHeader);
+      }
+  });
+  updateHeader();
 
     /** Sticky Header js **/
 

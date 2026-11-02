@@ -40,9 +40,9 @@
         </div>--}}
         <span>
             @if($product->regular_price > $product->offerPrice())
-            <del>{{priceFullFormat($product->regular_price)}}</del>
+            <del>{{priceFullFormat($product->regular_price, 0)}}</del>
             @endif
-            {{priceFullFormat($product->offerPrice())}}</span>
+            {{priceFullFormat($product->offerPrice(), 0)}}</span>
         @if($product->stockStatus()==false)
         <a href="javascript:void(0)" class="btn addcartbutton" style="background-color: #ec0927;"><i class="fa mr-1 fa-times"></i> STOCK OUT</a>
         @else

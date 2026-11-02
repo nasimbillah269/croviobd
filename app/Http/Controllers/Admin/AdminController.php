@@ -1652,9 +1652,12 @@ class AdminController extends Controller
        $check = $r->validate([
             'name' => 'required|max:191',
             'uselayer' => 'nullable|max:200',
-            'solidcolor' => 'nullable|max:200',
+            // full http(s) URL or a site-relative path like /product/abc
+            'link' => ['nullable','max:500','regex:/^(https?:\/\/|\/)/i'],
             //'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            //'banner' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'banner' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:4096',
+        ],[
+            'link.regex' => 'Link must start with http://, https:// or /',
         ]);
 
         if(!$check){
@@ -1664,8 +1667,9 @@ class AdminController extends Controller
 
       $slide->name =$r->name;
       $slide->description=$r->description;
-      $slide->seo_title=$r->link;
-      $slide->icon=$r->solidcolor;
+      $slide->seo_title=$r->uselayer;
+      $slide->seo_description=$r->link;
+      $slide->target=$r->target?true:false;
       ///////Image Uploard Start////////////
       if($r->hasFile('image')){
          $file=$r->image;

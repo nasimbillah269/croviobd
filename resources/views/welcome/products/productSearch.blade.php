@@ -7,7 +7,7 @@
     <meta name="keywords" content="{{general()->meta_keyword}}" />
     <meta property="og:title" content="{{general()->meta_title}}" />
     <meta property="og:description" content="{!!general()->meta_description!!}" />
-    <meta property="og:image" content="{asset(general()->logo())}" />
+    <meta property="og:image" content="{{asset(general()->logo())}}" />
     <meta property="og:url" content="{{route('productSearch')}}" />
 @endsection @push('css')
 @endpush 

@@ -5,7 +5,7 @@
 <meta name="keywords" content="{{App\Models\General::latest()->first()->meta_key}}" />
 <meta property="og:title" content="{{App\Models\General::latest()->first()->name}}" />
 <meta property="og:description" content="{!!App\Models\General::latest()->first()->meta_dsc!!}" />
-<meta property="og:image" content="{!!App\Models\General::latest()->first()->meta_dsc!!}" />
+<meta property="og:image" content="{{asset(general()->logo())}}" />
 <meta property="og:url" content="{{route('index')}}" />
 @endsection @push('css')
 

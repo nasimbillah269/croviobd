@@ -13,6 +13,36 @@
     background: #ff005e !important;
 }
 
+/* ---------- Sticky header ----------
+   position:sticky keeps the header in the page flow, so nothing jumps when
+   it starts sticking; the .stick class (toggled on scroll) only adds the
+   shadow and shrinks the logo with GPU-friendly transforms. */
+header.sticky-header,
+header.sticky-header.stick,
+.mobileHeader,
+.mobileHeader.stick {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    left: auto;
+    z-index: 1040;
+    animation: none;
+    transition: box-shadow .3s ease, background-color .3s ease;
+}
+header.sticky-header.stick,
+.mobileHeader.stick {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .28);
+}
+header.sticky-header .middle-header.hidesection { display: block; }
+header.sticky-header .logo img,
+.mobileHeader .mobileLogo img {
+    transform-origin: left center;
+    transition: transform .3s ease;
+}
+header.sticky-header.stick .logo img { transform: scale(.85); }
+.mobileHeader .mobileLogo img { transform-origin: center; }
+.mobileHeader.stick .mobileLogo img { transform: scale(.9); }
+
 
 .logo span {
     color: #fff;
@@ -544,6 +574,176 @@
 }
 .productRow .col-6{
   padding:10px;
+}
+
+.slider-link { display: block; }
+
+/* header "Offer Products" link next to the search bar */
+.headerOfferLink {
+    position: relative; overflow: hidden; isolation: isolate;
+    display: inline-flex; align-items: center; gap: 8px;
+    margin-top: 7px; padding: 8px 16px; border-radius: 8px;
+    background: linear-gradient(120deg, #ff005e 0%, #ff3d84 50%, #ff005e 100%);
+    background-size: 200% 100%;
+    color: #fff !important; font-size: 14px; font-weight: 600;
+    text-decoration: none !important; white-space: nowrap;
+    animation: offerGlow 2.8s ease-in-out infinite, offerGradient 6s linear infinite;
+    transition: transform .25s cubic-bezier(.2, .8, .2, 1), box-shadow .25s ease;
+}
+/* light sweep that crosses the button every few seconds */
+.headerOfferLink:after {
+    content: ''; position: absolute; top: 0; left: -75%; z-index: -1;
+    width: 50%; height: 100%;
+    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .45), transparent);
+    transform: skewX(-20deg);
+    animation: offerShine 3.5s ease-in-out infinite;
+}
+.headerOfferLink i { display: inline-block; transform-origin: 70% 30%; animation: offerTagSwing 3.5s ease-in-out infinite; }
+.headerOfferLink:hover, .headerOfferLink.active {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 8px 22px rgba(255, 0, 94, .55);
+}
+.headerOfferLink:hover i { animation-duration: .9s; }
+.headerOfferLink:active { transform: translateY(0) scale(.98); }
+
+@keyframes offerGlow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 0, 94, .55); }
+    50%      { box-shadow: 0 0 0 7px rgba(255, 0, 94, 0); }
+}
+@keyframes offerGradient {
+    0%   { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+}
+@keyframes offerShine {
+    0%, 55% { left: -75%; }
+    100%    { left: 130%; }
+}
+@keyframes offerTagSwing {
+    0%, 70%, 100% { transform: rotate(0); }
+    76% { transform: rotate(-14deg); }
+    84% { transform: rotate(10deg); }
+    92% { transform: rotate(-5deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .headerOfferLink, .headerOfferLink:after, .headerOfferLink i { animation: none; }
+}
+
+/* page headings promoted to <h1> for SEO keep their previous look */
+h1.singleProducttitle { font-size: 1.75rem; font-weight: 500; line-height: 1.2; margin: 10px 0 0; }
+h1.categorytitle { font-size: 1rem; font-weight: 400; line-height: 1.5; }
+.sr-only-h1 { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+@media (max-width: 768px) {
+    h1.singleProducttitle { font-size: 18px; line-height: 25px; }
+}
+
+/* discount badge + cart counters use the same pink as the Offer Products button */
+.badgText,
+.cartCount,
+.cartCounts {
+    background: linear-gradient(120deg, #ff005e 0%, #ff3d84 100%) !important;
+    color: #fff;
+}
+.badgText { box-shadow: 0 3px 10px rgba(255, 0, 94, .35); }
+
+/* ---------- Floating WhatsApp button ---------- */
+.whatsapp-fixed {
+    position: fixed; right: 22px; bottom: 22px; z-index: 1030;
+    display: flex; align-items: center; gap: 12px;
+    text-decoration: none !important;
+    animation: waEnter .7s cubic-bezier(.34, 1.56, .64, 1) .6s both;
+}
+.wa-icon {
+    position: relative; flex-shrink: 0;
+    width: 60px; height: 60px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(145deg, #3be37a 0%, #25d366 45%, #128c7e 100%);
+    box-shadow: 0 10px 25px rgba(18, 140, 126, .45), inset 0 2px 0 rgba(255, 255, 255, .35);
+    transition: transform .3s cubic-bezier(.2, .8, .2, 1), box-shadow .3s ease;
+}
+.wa-icon i {
+    position: relative; z-index: 2;
+    color: #fff; font-size: 32px; line-height: 1;
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .15));
+    animation: waWiggle 5s ease-in-out 2s infinite;
+}
+/* expanding rings */
+.wa-ring {
+    position: absolute; inset: 0; border-radius: 50%;
+    border: 2px solid #25d366; opacity: 0;
+    animation: waRing 2.6s ease-out infinite;
+}
+.wa-ring-2 { animation-delay: 1.3s; }
+/* small "online" dot */
+.wa-online {
+    position: absolute; top: 3px; right: 3px; z-index: 3;
+    width: 13px; height: 13px; border-radius: 50%;
+    background: #ff005e; border: 2px solid #fff;
+    animation: waDot 1.6s ease-in-out infinite;
+}
+/* label that slides out from the bubble */
+.wa-label {
+    display: flex; flex-direction: column;
+    background: #fff; color: #111827; border-radius: 12px;
+    padding: 8px 14px; font-size: 14px; font-weight: 700; line-height: 1.2; white-space: nowrap;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .14);
+    opacity: 0; transform: translateX(14px) scale(.95); transform-origin: right center;
+    pointer-events: none;
+    transition: opacity .3s ease, transform .3s cubic-bezier(.2, .8, .2, 1);
+    animation: waLabelPeek 4.5s ease 1.8s both;
+}
+.wa-label small { font-size: 11px; font-weight: 500; color: #6b7280; margin-bottom: 2px; }
+.whatsapp-fixed:hover .wa-label { opacity: 1; transform: none; animation: none; }
+.whatsapp-fixed:hover .wa-icon { transform: scale(1.08) rotate(-6deg); box-shadow: 0 14px 30px rgba(18, 140, 126, .55), inset 0 2px 0 rgba(255, 255, 255, .35); }
+.whatsapp-fixed:active .wa-icon { transform: scale(.95); }
+.whatsapp-fixed:focus-visible .wa-icon { outline: 3px solid #128c7e; outline-offset: 3px; }
+
+@keyframes waEnter {
+    from { opacity: 0; transform: translateY(40px) scale(.6); }
+    to   { opacity: 1; transform: none; }
+}
+@keyframes waRing {
+    0%   { transform: scale(1); opacity: .7; }
+    100% { transform: scale(1.7); opacity: 0; }
+}
+@keyframes waDot {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.2); }
+}
+@keyframes waWiggle {
+    0%, 84%, 100% { transform: rotate(0); }
+    87% { transform: rotate(-15deg); }
+    90% { transform: rotate(12deg); }
+    93% { transform: rotate(-8deg); }
+    96% { transform: rotate(4deg); }
+}
+/* label shows once shortly after page load, then hides until hover */
+@keyframes waLabelPeek {
+    0%   { opacity: 0; transform: translateX(14px) scale(.95); }
+    10%, 85% { opacity: 1; transform: none; }
+    100% { opacity: 0; transform: translateX(14px) scale(.95); }
+}
+
+@media (max-width: 767.98px) {
+    .whatsapp-fixed { right: 16px; bottom: 16px; }
+    .wa-icon { width: 54px; height: 54px; }
+    .wa-icon i { font-size: 29px; }
+    .wa-label { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .whatsapp-fixed, .wa-icon i, .wa-ring, .wa-online, .wa-label { animation: none; }
+    .wa-ring { display: none; }
+}
+
+/* slides with a dedicated phone image keep that image's own height */
+@media screen and (max-width: 767.98px) {
+    .slider-image-wrapper.has-mobile-image {
+        height: auto;
+        min-height: 150px;
+    }
+    .slider-image-wrapper.has-mobile-image .lazy-slider {
+        position: relative;
+        height: auto;
+    }
 }
 
 

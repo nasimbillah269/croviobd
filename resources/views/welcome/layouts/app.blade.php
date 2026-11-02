@@ -1,8 +1,6 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
     <head>
-        
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
         <!-- Required meta tags -->
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
@@ -12,6 +10,7 @@
         <!-- Favicon -->
         <link rel="shortcut icon" type="image/x-icon" href="{{asset(general()->favicon())}}" />
         @yield('SEO')
+        @include(general()->theme.'.layouts.seo')
         <!-- Google Font CDN-->
         <link href="https://fonts.googleapis.com/css?family=Source Code Pro" rel="stylesheet" />
         
@@ -43,7 +42,10 @@
 
         <!-- Custom Css for this Design -->
         <link rel="stylesheet" href="{{asset('nihon/css/style-v2.2.css')}}" />
-        <link rel="stylesheet" href="{{asset('nihon/css/coustome.css')}}" />
+        <link rel="stylesheet" href="{{asset('nihon/css/coustome.css')}}?v=6" />
+        @if(request()->is('customer/*'))
+        <link rel="stylesheet" href="{{asset('nihon/css/customer-dashboard.css')}}?v=1" />
+        @endif
         
         <!-- Jquery Script  CDN-->
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
@@ -86,30 +88,6 @@
             .main-container {
                 min-height: 700px;
             }
-            .whatsapp-fixed {
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                width: 50px;
-                height: 50px;
-                background-color: #25D366;
-                color: white;
-                font-size: 24px;
-                padding: 15px;
-                border-radius: 50%;
-                text-align: center;
-                z-index: 1000;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-                text-decoration: none;
-                transition: background-color 0.3s ease;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-            }
-            .whatsapp-fixed i {
-                color: #ffff;
-                font-size: 30px;
-            }
             .footer-widget p {
                 font-size: 14px;
             }
@@ -144,6 +122,7 @@
 }
             }
         </style>
+        <link rel="stylesheet" href="{{asset('nihon/css/premium.css')}}?v=19" />
         @stack('css')
     </head>
     
@@ -151,8 +130,17 @@
         
         
         <!-- WhatsApp Fixed Button -->
-        <a href="https://wa.me/88{{general()->mobile}}" class="whatsapp-fixed" target="_blank">
-          <i class="fa-brands fa-whatsapp"></i>
+        <a href="https://wa.me/88{{general()->mobile}}?text={{ rawurlencode('Hello '.general()->title.', I need some help.') }}" class="whatsapp-fixed" target="_blank" rel="noopener" aria-label="Chat with us on WhatsApp">
+          <span class="wa-label">
+            <small>Need help?</small>
+            Chat with us
+          </span>
+          <span class="wa-icon">
+            <span class="wa-ring"></span>
+            <span class="wa-ring wa-ring-2"></span>
+            <i class="fa-brands fa-whatsapp"></i>
+            <span class="wa-online"></span>
+          </span>
         </a>
                 
         
@@ -188,7 +176,7 @@
         <script src="https://code.iconify.design/1/1.0.7/iconify.min.js"></script>
 
         <!-- Custom Script for this Design -->
-        <script src="{{asset('nihon/js/myjquery.js')}}"></script>
+        <script src="{{asset('nihon/js/myjquery.js')}}?v=2"></script>
         
         
           {!!general()->script_body!!}
@@ -211,7 +199,10 @@
     
                     if (imgTop < windowBottom + 200) {
                         const skeleton = $img.prev(`.${skeletonClass}`);
-                        $img.attr("src", $img.data("src")).css("opacity", "0");
+                        // slides can carry a separate image for phones
+                        const mobileSrc = $img.data("mobile-src");
+                        const src = mobileSrc && window.innerWidth < 768 ? mobileSrc : $img.data("src");
+                        $img.attr("src", src).css("opacity", "0");
     
                         $img.on("load", function () {
                             $(this).css("opacity", "1");
@@ -349,12 +340,12 @@
                             $(".viewItemsLists").empty().append(data.itemsView);
 
                             if(data.status==true){
-                              $(that).html('<i class="fa fa-heart"></i>');
+                              $(that).html('<i class="fa-solid fa-heart"></i>');
                             }else{
-                              $(that).html('<i class="fa fa-heart-o"></i>');
+                              $(that).html('<i class="fa-regular fa-heart"></i>');
                             }
                             if(data.statusType==0){
-                              $(".wlcounter").empty().append(data.count);
+                              $(".wlcounter").text(data.count).toggle(data.count > 0);
                               if(data.alert==true){
                                 alert('Wishlist Are Full. Cannot Added Over 48 Items.');
                               }
@@ -442,14 +433,22 @@
                 })
                 .done(function(data) {
 
+                    // the mobile cart drawer is re-rendered below; keep it open if it was
+                    var mobileCartOpen = $('.mobile-menu-side-modals2').hasClass('open-side');
+
                     $(".productList-table").empty().append(data.cartItems);
                     $(".HeaderCartItems").empty().append(data.HeadercartItems);
                     $(".HeaderCartItems2").empty().append(data.HeadercartItems2);
-                    
+
+                    if(mobileCartOpen){
+                        $('.mobile-menu-side-modals2').addClass('open-side mc-no-anim');
+                        setTimeout(function(){ $('.mobile-menu-side-modals2').removeClass('mc-no-anim'); }, 50);
+                    }
+
                     if(data.singleAddToCard){
                         $(".homeFlexButton_"+data.pro_id).empty().append(data.singleAddToCard);
                     }
-                    
+
                 })
                 .fail(function() {
                   // alert("error");
@@ -480,17 +479,6 @@
                 // });
             });
         </script>
-        <script>
-        $(document).ready(function () {
-            $(window).on('scroll', function () {
-                if ($(this).scrollTop() > 100) {
-                    $('.mobileHeader').addClass('stick');
-                } else {
-                    $('.mobileHeader').removeClass('stick');
-                }
-            });
-        });
-        </script>     
         
         
         <script>

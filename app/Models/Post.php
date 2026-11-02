@@ -79,12 +79,9 @@ class Post extends Model
     
     public function discountPercent(){
         $discount= 0;
-        if($this->regular_price > $this->final_price){
-                if($this->discount_type=='flat'){
-                    $discount = round($this->final_price / $this->regular_price * 100);
-                }else{
-                    $discount=round($this->discount);
-                }
+        // derived from the shown prices so the badge always matches them
+        if($this->regular_price > 0 && $this->regular_price > $this->final_price){
+            $discount = round(($this->regular_price - $this->final_price) / $this->regular_price * 100);
         }
         return $discount;
     }

@@ -1,12 +1,19 @@
 @extends(general()->theme.'.layouts.app') @section('title')
-<title>{{general()->title}} | {{general()->subtitle}}</title>
+@php
+    // posts table stores the page meta description in seo_desc
+    $seoTitle = $page->seo_title ?: $page->name;
+    $seoDesc = Str::limit(trim(preg_replace('/\s+/', ' ', strip_tags(html_entity_decode(
+        $page->seo_desc ?: ($page->short_description ?: ($page->description ?: general()->meta_description))
+    )))), 158, '…');
+@endphp
+<title>{{$seoTitle}} - {{general()->title}}</title>
 @endsection @section('SEO')
-<meta name="description" content="{!!general()->meta_description!!}" />
-<meta name="keywords" content="{{general()->meta_keyword}}" />
-<meta property="og:title" content="{{general()->meta_title}}" />
-<meta property="og:description" content="{!!general()->meta_description!!}" />
-<meta property="og:image" content="{!!general()->meta_description!!}" />
-<meta property="og:url" content="{{route('index')}}" />
+<meta name="description" content="{{$seoDesc}}" />
+<meta name="keywords" content="{{$page->seo_keyword?:general()->meta_keyword}}" />
+<meta property="og:title" content="{{$seoTitle}}" />
+<meta property="og:description" content="{{$seoDesc}}" />
+<meta property="og:image" content="{{asset($page->imageFile ? $page->image() : general()->logo())}}" />
+<meta property="og:url" content="{{route('pageView',$page->slug?:'no-title')}}" />
 @endsection @push('css')
 <style>
     .aboutPage ul {

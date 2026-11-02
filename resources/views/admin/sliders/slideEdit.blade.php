@@ -74,6 +74,20 @@
 					             				<option value="2" {{$slide->seo_title=='2'?'selected':''}} >Solid Color layer</option>
 					             			</select>
 					             		</div>
+					             		<div class="form-group">
+					             			<label for="link">Slide Link</label>
+					             			<input type="text" id="link" name="link" class="form-control {{$errors->has('link')?'error':''}}" placeholder="Exp: https://croviobd.com/product/... or /product-search" value="{{old('link', $slide->seo_description)}}" />
+					             			@if ($errors->has('link'))
+					             			<p style="color: red;margin: 0;font-size: 10px;">{{ $errors->first('link') }}</p>
+					             			@endif
+					             			<small class="text-muted">Leave empty if the slide should not be clickable.</small>
+					             		</div>
+					             		<div class="form-group">
+					             			<div class="custom-control custom-checkbox">
+					             				<input type="checkbox" class="custom-control-input" id="target" name="target" {{$slide->target?'checked':''}} />
+					             				<label class="custom-control-label" for="target">Open link in new tab</label>
+					             			</div>
+					             		</div>
 
 		                    </div>
 		                 </div>
@@ -100,12 +114,19 @@
 	                				@endif
 	                			</div>
 	                			<div class="form-group">
-	            					<label for="solidcolor">Slide Solid Color (Exp: black or #000)</label>
-	            					<input type="text" name="solidcolor" value="{{$slide->icon?:old('name')}}" class="form-control {{$errors->has('solidcolor')?'error':''}}" name="solidcolor">
-	            					@if ($errors->has('solidcolor'))
-	                              	<p style="color: red;margin: 0;font-size: 10px;">{{ $errors->first('solidcolor') }}</p>
+	            					<label for="banner">Mobile Image</label>
+	            					<input type="file" name="banner" id="banner" accept="image/*" class="form-control {{$errors->has('banner')?'error':''}}" >
+	            					@if ($errors->has('banner'))
+	                              	<p style="color: red;margin: 0;font-size: 10px;">{{ $errors->first('banner') }}</p>
 	                               	@endif
-	            				</div>
+	                               	<small class="text-muted">Shown on phones (below 768px). Leave empty to use the main image.</small>
+	                			</div>
+	                			@if($slide->bannerFile)
+	                    		<div class="form-group">
+	                				<img src="{{asset($slide->banner())}}" style="max-width: 100px;">
+	                				<a href="{{route('admin.mediesDelete',$slide->bannerFile->id)}}" class="mediaDelete" style="color:red;"><i class="fa fa-trash"></i></a>
+	                			</div>
+	                			@endif
 	            				<div class="row">
 		                     		<div class="form-group col-6">
 		                    			<label for="status">Slider Status</label>

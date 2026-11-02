@@ -1,13 +1,28 @@
 @extends(general()->theme.'.layouts.app') @section('title')
-<title>{{$post->name}} | {{general()->title}}</title>
+<title>{{$post->seo_title ?: $post->name}} | {{general()->title}}</title>
 @endsection @section('SEO')
-<meta name="description" content="{{Str::limit(strip_tags($post->short_description),160)}}" />
+<meta name="description" content="{{Str::limit(trim(preg_replace('/\s+/', ' ', strip_tags(html_entity_decode($post->seo_desc ?: ($post->short_description ?: $post->description))))),158)}}" />
 <meta name="keywords" content="{{general()->meta_key}}" />
 <meta property="og:title" content="{{$post->name}}" />
-<meta property="og:description" content="{{Str::limit(strip_tags($post->short_description),160)}}" />
+<meta property="og:description" content="{{Str::limit(trim(preg_replace('/\s+/', ' ', strip_tags(html_entity_decode($post->seo_desc ?: ($post->short_description ?: $post->description))))),158)}}" />
 <meta property="og:image" content="{{asset($post->image())}}" />
 <meta property="og:url" content="{{route('blogView',$post->slug)}}" />
-@endsection @push('css')
+<meta property="article:published_time" content="{{$post->created_at->toAtomString()}}" />
+<meta property="article:modified_time" content="{{$post->updated_at->toAtomString()}}" />
+<script type="application/ld+json">{!! json_encode([
+    '@context' => 'https://schema.org',
+    '@type' => 'BlogPosting',
+    'headline' => Str::limit($post->name, 110, ''),
+    'description' => Str::limit(trim(preg_replace('/\s+/', ' ', strip_tags(html_entity_decode($post->seo_desc ?: ($post->short_description ?: $post->description))))), 158),
+    'image' => [asset($post->image())],
+    'datePublished' => $post->created_at->toAtomString(),
+    'dateModified' => $post->updated_at->toAtomString(),
+    'mainEntityOfPage' => route('blogView', $post->slug),
+    'author' => ['@type' => 'Organization', 'name' => general()->title],
+    'publisher' => ['@type' => 'Organization', 'name' => general()->title, 'logo' => ['@type' => 'ImageObject', 'url' => asset(general()->logo())]],
+], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+@endsection
+@section('ogType', 'article') @push('css')
 @endpush
 
 @section('contents')

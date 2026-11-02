@@ -2,8 +2,12 @@
     <div class="headCart">
         <div class="headCartInfo">
             <span style="">কার্ট দেখুন</span>
-            <i class="fa ml-1 fa-shopping-cart" style="color: white;"></i>
-            <span class="cartCounts">@isset ($carts) {{$carts->count()}} @endisset</span>
+            <span class="headCartIcon">
+                <i class="fa ml-1 fa-shopping-cart" style="color: white;"></i>
+                @if(isset($carts) && $carts->count() > 0)
+                <span class="cartCounts">{{$carts->count()}}</span>
+                @endif
+            </span>
         </div>
     </div>
 <!--<span class="cartCount">@isset ($carts) {{$carts->count()}} @endisset</span>-->

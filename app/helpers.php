@@ -37,11 +37,11 @@ function priceFormat($amount=0)
 
 }
 
-function priceFullFormat($amount=0)
+function priceFullFormat($amount=0,$decimal=null)
 {
   $formatAmount ='';
 
-  $amountFormet = number_format($amount,general()->currency_decimal);
+  $amountFormet = number_format($amount,$decimal ?? general()->currency_decimal);
 
   if(general()->currency_position==0){
     $formatAmount = general()->currency.' '.$amountFormet;

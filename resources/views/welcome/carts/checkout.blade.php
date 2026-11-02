@@ -1,113 +1,155 @@
 @extends(general()->theme.'.layouts.app') @section('title')
-<title>{{general()->title}} | {{general()->subtitle}}</title>
+<title>Checkout | {{general()->title}}</title>
 @endsection @section('SEO')
 <meta name="description" content="{!!general()->meta_description!!}" />
 <meta name="keywords" content="{{general()->meta_keyword}}" />
 <meta property="og:title" content="{{general()->meta_title}}" />
 <meta property="og:description" content="{!!general()->meta_description!!}" />
-<meta property="og:image" content="{!!general()->meta_description!!}" />
+<meta property="og:image" content="{{asset(general()->logo())}}" />
 <meta property="og:url" content="{{route('index')}}" />
 @endsection
 @push('css')
 <style>
-.overViewTable tr th {
-    background: #eeeeee;
+.checkoutPage { --ck-primary: #ff005e; --ck-text: #111827; --ck-muted: #6b7280; --ck-border: #eceef1; padding: 28px 0 56px; color: var(--ck-text); }
+.checkoutPage a { text-decoration: none; }
+
+/* header + steps */
+.ck-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+.ck-top h1 { font-size: 26px; font-weight: 700; margin: 0; }
+.ck-steps { display: flex; align-items: center; gap: 10px; list-style: none; margin: 0; padding: 0; font-size: 13px; font-weight: 600; color: #9ca3af; }
+.ck-steps li { display: flex; align-items: center; gap: 8px; }
+.ck-steps li span { width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: #f3f4f6; font-size: 12px; }
+.ck-steps li.done { color: #16a34a; }
+.ck-steps li.done span { background: #dcfce7; color: #16a34a; }
+.ck-steps li.active { color: var(--ck-text); }
+.ck-steps li.active span { background: var(--ck-primary); color: #fff; }
+.ck-steps .ck-step-line { width: 28px; height: 2px; background: #e5e7eb; }
+
+.ck-notice {
+    display: flex; align-items: center; gap: 12px;
+    background: #fff0f5; border: 1px solid #ffd1e2; color: #9d174d;
+    border-radius: 12px; padding: 12px 16px; font-size: 15px; margin-bottom: 18px;
 }
-.overViewTable tr th, .overViewTable tr td{
-    padding: 5px 8px;
+.ck-notice i { color: var(--ck-primary); font-size: 18px; }
+.ck-notice b { color: var(--ck-primary); }
+
+/* section cards */
+.ck-card { background: #fff; border: 1px solid var(--ck-border); border-radius: 14px; box-shadow: 0 1px 3px rgba(16,24,40,.05); padding: 22px; margin-bottom: 18px; }
+.ck-section-title { display: flex; align-items: center; gap: 12px; font-size: 17px; font-weight: 700; margin: 0 0 18px; padding: 0; border: 0; }
+.ck-section-title .ck-num {
+    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: linear-gradient(120deg, #ff005e, #ff3d84); color: #fff; font-size: 14px;
 }
-.ordertable td, .ordertable th{
-    padding: 6px 12px;
-    font-size: 16px;
-    font-weight: 400;
-    border-top: 0;
+.ck-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
+.ck-grid .ck-full { grid-column: 1 / -1; }
+.ck-field { margin-bottom: 16px; }
+.ck-label { display: block; font-size: 14px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+.checkoutPage .form-control {
+    height: auto; min-height: 46px; padding: 11px 14px; font-size: 15px;
+    border: 1px solid #d1d5db; border-radius: 10px; color: var(--ck-text); background-color: #fff;
+    box-shadow: none; transition: border-color .15s, box-shadow .15s;
 }
-.ordertable .ck-total th, .ordertable .ck-total td{
-    font-size: 18px;
-    font-weight: 700;
-    border-top: 1px solid #ddd;
+.checkoutPage textarea.form-control { min-height: 84px; }
+.checkoutPage .form-control:focus { border-color: var(--ck-primary); box-shadow: 0 0 0 3px rgba(255,0,94,.12); }
+.checkoutPage .form-control:disabled { background-color: #f9fafb; color: #9ca3af; cursor: not-allowed; }
+.ck-error { color: #dc2626; margin: 6px 0 0; font-size: 13px; }
+
+/* payment options */
+.ck-pay-option {
+    position: relative; display: block; cursor: pointer;
+    border: 2px solid #e5e7eb; border-radius: 12px; padding: 14px 16px 14px 50px; margin-bottom: 12px;
+    transition: border-color .2s, background .2s, box-shadow .2s;
 }
-.ordertable .ck-advance th, .ordertable .ck-advance td{
-    color: #ff005e;
-    font-weight: 700;
+.ck-pay-option:hover { border-color: #ffb3cf; }
+.ck-pay-option input { position: absolute; opacity: 0; pointer-events: none; }
+.ck-pay-option:before {
+    content: ''; position: absolute; left: 16px; top: 16px;
+    width: 20px; height: 20px; border-radius: 50%; border: 2px solid #d1d5db; background: #fff; transition: all .2s;
 }
-.ordertable .ck-due th, .ordertable .ck-due td{
-    font-weight: 700;
+.ck-pay-option.active { border-color: var(--ck-primary); background: #fff5f9; box-shadow: 0 6px 18px rgba(255,0,94,.12); }
+.ck-pay-option.active:before { border-color: var(--ck-primary); background: var(--ck-primary); box-shadow: inset 0 0 0 4px #fff; }
+.ck-pay-option b { font-size: 15.5px; }
+.ck-pay-option small { display: block; color: var(--ck-muted); margin: 4px 0 0; font-size: 13px; line-height: 1.5; }
+.ck-pay-icon { position: absolute; right: 16px; top: 14px; color: #9ca3af; font-size: 20px; }
+.ck-pay-option.active .ck-pay-icon { color: var(--ck-primary); }
+.ck-offer {
+    display: inline-block; margin: 8px 0 0;
+    background: #dcfce7; color: #15803d; border-radius: 999px; padding: 3px 10px; font-size: 12.5px; font-weight: 600;
 }
-.ck-section-title{
-    font-size: 17px;
-    font-weight: 700;
-    margin: 20px 0 12px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid #eee;
+.ck-qr-box { border: 1px dashed #ff8fb8; background: #fffafc; border-radius: 12px; padding: 18px; margin-top: 4px; }
+.ck-qr-box img { max-width: 220px; width: 100%; display: block; margin: 0 auto 12px; border-radius: 10px; background: #fff; padding: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+.ck-qr-box p { font-size: 14px; }
+.ck-pay-amount { text-align: center; font-size: 17px; margin-bottom: 12px; }
+.ck-pay-amount b { color: var(--ck-primary); font-size: 22px; }
+.ck-hint { font-size: 13px; color: #4b5563; line-height: 1.6; margin-top: 8px; }
+.ck-coupon-msg { font-size: 13.5px; margin: 6px 0 0; }
+
+/* summary */
+.checkoutInfo.ck-summary {
+    background: #fff; border: 1px solid var(--ck-border); border-radius: 14px; box-shadow: 0 1px 3px rgba(16,24,40,.05);
+    padding: 22px; position: sticky; top: 100px; margin: 0;
 }
-.ck-label{
-    font-weight: bold;
+.ck-summary h4 { font-size: 18px; font-weight: 700; margin: 0 0 16px; }
+.ck-items { max-height: 260px; overflow-y: auto; margin: 0 -4px 16px; padding: 0 4px; }
+.ck-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f3f4f6; }
+.ck-item:last-child { border-bottom: 0; }
+.ck-item-img { position: relative; flex-shrink: 0; }
+.ck-item-img img { width: 54px; height: 54px; object-fit: cover; border-radius: 10px; border: 1px solid var(--ck-border); }
+.ck-item-qty {
+    position: absolute; top: -7px; right: -7px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px;
+    background: #374151; color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center;
 }
-.ck-error{
-    color: red;
-    margin: 0;
-    font-size: 14px;
+.ck-item-info { flex: 1; min-width: 0; }
+.ck-item-name { display: block; font-size: 14px; font-weight: 600; color: var(--ck-text) !important; line-height: 1.35; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.ck-item-meta { font-size: 12px; color: var(--ck-muted); }
+.ck-item-price { font-size: 14px; font-weight: 700; white-space: nowrap; }
+
+.ck-coupon { padding: 14px 0; border-top: 1px solid #f3f4f6; border-bottom: 1px solid #f3f4f6; margin-bottom: 8px; }
+.ck-coupon .input-group .form-control { border-radius: 10px 0 0 10px; min-height: 44px; }
+.ck-coupon .input-group .btn { white-space: nowrap; border-radius: 0 10px 10px 0; background: #111827; border-color: #111827; font-weight: 600; padding: 0 18px; }
+.ck-coupon .input-group .btn:hover { background: #000; }
+#couponAppliedBox .badge { background: #dcfce7; color: #15803d; padding: 7px 12px; border-radius: 999px; }
+
+.ordertable { margin: 0; }
+.ordertable td, .ordertable th { padding: 8px 0; font-size: 15px; font-weight: 500; color: #374151; border-top: 0; }
+.ordertable .ck-total th, .ordertable .ck-total td { font-size: 19px; font-weight: 700; color: var(--ck-text); border-top: 1px dashed #e5e7eb; padding-top: 14px; }
+.ordertable .ck-advance th, .ordertable .ck-advance td { color: var(--ck-primary); font-weight: 700; }
+.ordertable .ck-due th, .ordertable .ck-due td { font-weight: 700; color: var(--ck-text); }
+
+.checkoutPage .placeOrderbtn {
+    position: relative; overflow: hidden;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; height: 56px; margin-top: 16px; border: 0; border-radius: 12px;
+    background: linear-gradient(120deg, #ff005e 0%, #ff3d84 100%); color: #fff;
+    font-size: 18px; font-weight: 700; cursor: pointer;
+    box-shadow: 0 10px 24px rgba(255,0,94,.32); transition: transform .2s ease, box-shadow .2s ease;
 }
-.ck-pay-option{
-    display: block;
-    border: 2px solid #ddd;
-    border-radius: 8px;
-    padding: 12px 14px;
-    margin-bottom: 10px;
-    cursor: pointer;
+.checkoutPage .placeOrderbtn:after {
+    content: ''; position: absolute; top: 0; left: -75%; width: 50%; height: 100%;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,.35), transparent); transform: skewX(-20deg);
+    animation: ckShine 3.5s ease-in-out infinite;
 }
-.ck-pay-option.active{
-    border-color: #ff005e;
-    background: #fff5f9;
+.checkoutPage .placeOrderbtn:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(255,0,94,.42); }
+.checkoutPage .placeOrderbtn:disabled { opacity: .75; cursor: wait; transform: none; }
+@keyframes ckShine { 0%, 55% { left: -75%; } 100% { left: 130%; } }
+
+.ck-trust { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #f3f4f6; }
+.ck-trust div { text-align: center; font-size: 12px; color: var(--ck-muted); line-height: 1.35; }
+.ck-trust i { display: block; font-size: 18px; color: #16a34a; margin-bottom: 6px; }
+
+@media (max-width: 991.98px) {
+    .checkoutInfo.ck-summary { position: static; margin-top: 4px; }
 }
-.ck-pay-option input{
-    margin-right: 8px;
+@media (max-width: 767.98px) {
+    .checkoutPage { padding: 18px 0 40px; }
+    .ck-top h1 { font-size: 21px; }
+    .ck-steps { display: none; }
+    .ck-card, .checkoutInfo.ck-summary { padding: 18px 16px; }
+    .ck-grid { grid-template-columns: 1fr; }
 }
-.ck-pay-option small{
-    display: block;
-    color: #666;
-    margin-left: 22px;
-}
-.ck-qr-box{
-    border: 1px dashed #ff005e;
-    border-radius: 8px;
-    padding: 15px;
-    margin-top: 5px;
-}
-.ck-qr-box img{
-    max-width: 220px;
-    width: 100%;
-    display: block;
-    margin: 0 auto 10px;
-}
-.ck-pay-amount{
-    text-align: center;
-    font-size: 18px;
-    margin-bottom: 12px;
-}
-.ck-pay-amount b{
-    color: #ff005e;
-    font-size: 22px;
-}
-.ck-offer{
-    display: inline-block;
-    background: #28a745;
-    color: #fff;
-    border-radius: 4px;
-    padding: 1px 8px;
-    font-size: 13px;
-    margin-left: 22px;
-}
-.ck-coupon .input-group .btn{
-    white-space: nowrap;
-}
-.ck-coupon-msg{
-    font-size: 14px;
-    margin: 5px 0 0;
-}
-.checkoutForm select.form-control{
-    height: auto;
+@media (prefers-reduced-motion: reduce) {
+    .checkoutPage .placeOrderbtn:after { animation: none; }
 }
 </style>
 @endpush
@@ -142,6 +184,16 @@
 
 <div class="checkoutPage">
     <div class="container">
+        <div class="ck-top">
+            <h1>Checkout</h1>
+            <ol class="ck-steps">
+                <li class="done"><span><i class="fa fa-check"></i></span> Cart</li>
+                <li class="ck-step-line"></li>
+                <li class="active"><span>2</span> Checkout</li>
+                <li class="ck-step-line"></li>
+                <li><span>3</span> Complete</li>
+            </ol>
+        </div>
         <div>
             @if (session('error'))
             <div class="alert alert-danger alert-dismissable">
@@ -158,136 +210,116 @@
         <form action="{{route('checkoutPost')}}" method="post" enctype="multipart/form-data" id="checkoutForm">
             @csrf
         <div class="row">
-            <div class="col-md-7">
-                <div class="checkoutForm">
-                    <h5 style="text-align: center;color: #ff005e;">
-                        নিচের তথ্যগুলো সঠিকভাবে পূরণ করে
-                        <b>"অর্ডার কনফার্ম করুন"</b>
-                        বাটনে ক্লিক করুন।
-                    </h5>
-
-                    <div class="ck-section-title">১. আপনার তথ্য</div>
-
-                    <div class="row mb-3">
-                        <label class="col-md-3 ck-label" for="name">
-                            আপনার নাম: <span class="text-danger">*</span>
-                        </label>
-                        <div class="col-md-9">
-                            <input type="text" id="name" value="{{old('name', $user ? $user->name : '')}}" name="name" class="form-control" placeholder="আপনার নাম লিখুন" required>
-                            @if ($errors->has('name'))
-                            <p class="ck-error">{{ $errors->first('name') }}</p>
-                            @endif
-                            @if(Session::has('nameError'))
-                            <p class="ck-error">{{Session::get('nameError') }}</p>
-                            @endif
-                        </div>
+            <div class="col-lg-7">
+                <div class="ck-form">
+                    <div class="ck-notice">
+                        <i class="fa fa-circle-info"></i>
+                        <span>নিচের তথ্যগুলো সঠিকভাবে পূরণ করে <b>"অর্ডার কনফার্ম করুন"</b> বাটনে ক্লিক করুন।</span>
                     </div>
 
-                    <div class="row mb-3">
-                        <label class="col-md-3 ck-label" for="mobile">
-                            মোবাইল নম্বর: <span class="text-danger">*</span>
-                        </label>
-                        <div class="col-md-9">
-                            <input type="tel" id="mobile" name="mobile" class="form-control" value="{{old('mobile', $user ? $user->mobile : '')}}" placeholder="01XXXXXXXXX" required>
-                            @if ($errors->has('mobile'))
-                            <p class="ck-error">{{ $errors->first('mobile') }}</p>
-                            @endif
+                    <div class="ck-card">
+                    <div class="ck-section-title"><span class="ck-num">১</span> আপনার তথ্য</div>
+                    <div class="ck-grid">
+
+                        <div class="ck-field">
+                            <label class="ck-label" for="name">আপনার নাম: <span class="text-danger">*</span></label>
+                        <input type="text" id="name" value="{{old('name', $user ? $user->name : '')}}" name="name" class="form-control" placeholder="আপনার নাম লিখুন" required>
+                        @if ($errors->has('name'))
+                        <p class="ck-error">{{ $errors->first('name') }}</p>
+                        @endif
+                        @if(Session::has('nameError'))
+                        <p class="ck-error">{{Session::get('nameError') }}</p>
+                        @endif
                         </div>
+
+                        <div class="ck-field">
+                            <label class="ck-label" for="mobile">মোবাইল নম্বর: <span class="text-danger">*</span></label>
+                        <input type="tel" id="mobile" name="mobile" class="form-control" value="{{old('mobile', $user ? $user->mobile : '')}}" placeholder="01XXXXXXXXX" required>
+                        @if ($errors->has('mobile'))
+                        <p class="ck-error">{{ $errors->first('mobile') }}</p>
+                        @endif
+                        </div>
+
+                        <div class="ck-field ck-full">
+                            <label class="ck-label" for="email">ইমেইল (অপশনাল):</label>
+                        <input type="email" id="email" name="email" class="form-control" value="{{old('email', $user ? $user->email : '')}}" placeholder="অর্ডার কনফার্মেশন ইমেইলে পেতে লিখুন">
+                        @if ($errors->has('email'))
+                        <p class="ck-error">{{ $errors->first('email') }}</p>
+                        @endif
+                        </div>
+
+                    </div>
                     </div>
 
-                    <div class="row mb-3">
-                        <label class="col-md-3 ck-label" for="email">
-                            ইমেইল (অপশনাল):
-                        </label>
-                        <div class="col-md-9">
-                            <input type="email" id="email" name="email" class="form-control" value="{{old('email', $user ? $user->email : '')}}" placeholder="অর্ডার কনফার্মেশন ইমেইলে পেতে লিখুন">
-                            @if ($errors->has('email'))
-                            <p class="ck-error">{{ $errors->first('email') }}</p>
-                            @endif
+                    <div class="ck-card">
+                    <div class="ck-section-title"><span class="ck-num">২</span> ডেলিভারি ঠিকানা</div>
+                    <div class="ck-grid">
+
+                        <div class="ck-field ck-full">
+                            <label class="ck-label" for="zone_id">সেক্টর / বিভাগ: <span class="text-danger">*</span></label>
+                        <select name="zone_id" id="zone_id" class="form-control" required>
+                            <option value="">-- সেক্টর / বিভাগ সিলেক্ট করুন --</option>
+                            @foreach($zones as $zone)
+                            @php([$minCharge, $maxCharge] = $zone->chargeRange())
+                            <option value="{{$zone->id}}" {{old('zone_id')==$zone->id?'selected':''}}>
+                                {{$zone->bn_name ?: $zone->name}} (ডেলিভারি চার্জ ৳{{en2bnNumber(number_format($minCharge))}}{{$maxCharge > $minCharge ? '–'.en2bnNumber(number_format($maxCharge)) : ''}})
+                            </option>
+                            @endforeach
+                        </select>
+                        @if ($errors->has('zone_id'))
+                        <p class="ck-error">{{ $errors->first('zone_id') }}</p>
+                        @endif
                         </div>
+
+                        <div class="ck-field">
+                            <label class="ck-label" for="district_id">জেলা: <span class="text-danger">*</span></label>
+                        <select name="district_id" id="district_id" class="form-control" required disabled>
+                            <option value="">-- আগে সেক্টর সিলেক্ট করুন --</option>
+                        </select>
+                        @if ($errors->has('district_id'))
+                        <p class="ck-error">{{ $errors->first('district_id') }}</p>
+                        @endif
+                        </div>
+
+                        <div class="ck-field">
+                            <label class="ck-label" for="upazila_id">উপজেলা / থানা: <span class="text-danger">*</span></label>
+                        <select name="upazila_id" id="upazila_id" class="form-control" required disabled>
+                            <option value="">-- আগে জেলা সিলেক্ট করুন --</option>
+                        </select>
+                        @if ($errors->has('upazila_id'))
+                        <p class="ck-error">{{ $errors->first('upazila_id') }}</p>
+                        @endif
+                        </div>
+
+                        <div class="ck-field ck-full">
+                            <label class="ck-label" for="address">আপনার ঠিকানা: <span class="text-danger">*</span></label>
+                        <textarea id="address" name="address" class="form-control" rows="2" placeholder="বাসা নং, রোড নং, এলাকার নাম লিখুন" required>{{old('address', $user ? $user->address_line1 : '')}}</textarea>
+                        @if ($errors->has('address'))
+                        <p class="ck-error">{{ $errors->first('address') }}</p>
+                        @endif
+                        </div>
+
+                        <div class="ck-field ck-full">
+                            <label class="ck-label" for="note">নোট (অপশনাল):</label>
+                        <textarea id="note" name="note" class="form-control" rows="2" placeholder="আপনি চাইলে কোন নোট লিখতে পারেন।">{{old('note')}}</textarea>
+                        </div>
+
+                    </div>
                     </div>
 
-                    <div class="ck-section-title">২. ডেলিভারি ঠিকানা</div>
-
-                    <div class="row mb-3">
-                        <label class="col-md-3 ck-label" for="zone_id">
-                            সেক্টর / বিভাগ: <span class="text-danger">*</span>
-                        </label>
-                        <div class="col-md-9">
-                            <select name="zone_id" id="zone_id" class="form-control" required>
-                                <option value="">-- সেক্টর / বিভাগ সিলেক্ট করুন --</option>
-                                @foreach($zones as $zone)
-                                @php([$minCharge, $maxCharge] = $zone->chargeRange())
-                                <option value="{{$zone->id}}" {{old('zone_id')==$zone->id?'selected':''}}>
-                                    {{$zone->bn_name ?: $zone->name}} (ডেলিভারি চার্জ ৳{{en2bnNumber(number_format($minCharge))}}{{$maxCharge > $minCharge ? '–'.en2bnNumber(number_format($maxCharge)) : ''}})
-                                </option>
-                                @endforeach
-                            </select>
-                            @if ($errors->has('zone_id'))
-                            <p class="ck-error">{{ $errors->first('zone_id') }}</p>
-                            @endif
-                        </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <label class="col-md-3 ck-label" for="district_id">
-                            জেলা: <span class="text-danger">*</span>
-                        </label>
-                        <div class="col-md-9">
-                            <select name="district_id" id="district_id" class="form-control" required disabled>
-                                <option value="">-- আগে সেক্টর সিলেক্ট করুন --</option>
-                            </select>
-                            @if ($errors->has('district_id'))
-                            <p class="ck-error">{{ $errors->first('district_id') }}</p>
-                            @endif
-                        </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <label class="col-md-3 ck-label" for="upazila_id">
-                            উপজেলা / থানা: <span class="text-danger">*</span>
-                        </label>
-                        <div class="col-md-9">
-                            <select name="upazila_id" id="upazila_id" class="form-control" required disabled>
-                                <option value="">-- আগে জেলা সিলেক্ট করুন --</option>
-                            </select>
-                            @if ($errors->has('upazila_id'))
-                            <p class="ck-error">{{ $errors->first('upazila_id') }}</p>
-                            @endif
-                        </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <label class="col-md-3 ck-label" for="address">
-                            আপনার ঠিকানা: <span class="text-danger">*</span>
-                        </label>
-                        <div class="col-md-9">
-                            <textarea id="address" name="address" class="form-control" rows="2" placeholder="বাসা নং, রোড নং, এলাকার নাম লিখুন" required>{{old('address', $user ? $user->address_line1 : '')}}</textarea>
-                            @if ($errors->has('address'))
-                            <p class="ck-error">{{ $errors->first('address') }}</p>
-                            @endif
-                        </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <label class="col-md-3 ck-label" for="note">
-                            নোট (অপশনাল):
-                        </label>
-                        <div class="col-md-9">
-                            <textarea id="note" name="note" class="form-control" rows="2" placeholder="আপনি চাইলে কোন নোট লিখতে পারেন।">{{old('note')}}</textarea>
-                        </div>
-                    </div>
-
-                    <div class="ck-section-title">৩. পেমেন্ট মেথড</div>
+                    <div class="ck-card">
+                    <div class="ck-section-title"><span class="ck-num">৩</span> পেমেন্ট মেথড</div>
 
                     <label class="ck-pay-option" data-method="cod">
                         <input type="radio" name="payment_method" value="cod" {{old('payment_method','cod')=='cod'?'checked':''}}>
+                        <i class="fa fa-truck ck-pay-icon"></i>
                         <b>ক্যাশ অন ডেলিভারি</b>
                         <small>ডেলিভারি চার্জের {{en2bnNumber($general->cod_advance_percent)}}% অগ্রিম দিয়ে অর্ডার কনফার্ম করুন, বাকি টাকা পণ্য হাতে পেয়ে দিন।</small>
                     </label>
 
                     <label class="ck-pay-option" data-method="full_advance">
                         <input type="radio" name="payment_method" value="full_advance" {{old('payment_method')=='full_advance'?'checked':''}}>
+                        <i class="fa fa-qrcode ck-pay-icon"></i>
                         <b>ফুল অগ্রিম (Bangla QR)</b>
                         <small>সম্পূর্ণ টাকা এখনই Bangla QR-এ পেমেন্ট করুন।</small>
                         @if($general->full_advance_free_delivery)
@@ -338,17 +370,19 @@
                         </div>
                     </div>
 
+                    </div>
+
                     @if($general->fb_discount_status)
                     @php($fbDiscount = fbDiscountFor($totals['subtotal'], $general))
-                    <div id="fbDiscountBox">
-                        <div class="ck-section-title">৪. Facebook পোস্টে স্পেশাল ডিসকাউন্ট (অপশনাল)</div>
+                    <div id="fbDiscountBox" class="ck-card">
+                        <div class="ck-section-title"><span class="ck-num">৪</span> Facebook পোস্টে স্পেশাল ডিসকাউন্ট (অপশনাল)</div>
                         <label class="ck-label" for="fb_post_link">Facebook পোস্টের লিংক দিন, স্পেশাল ডিসকাউন্ট পান</label>
                         <input type="url" id="fb_post_link" name="fb_post_link" class="form-control" value="{{old('fb_post_link')}}" placeholder="https://www.facebook.com/...">
                         <p class="ck-coupon-msg" id="fbPostMsg"></p>
                         @if ($errors->has('fb_post_link'))
                         <p class="ck-error">{{ $errors->first('fb_post_link') }}</p>
                         @endif
-                        <div style="font-size: 13px;color: #555;line-height: 20px;margin-top: 6px;">
+                        <div class="ck-hint">
                             @if($fbDiscount > 0)
                             যাচাইয়ে অনুমোদিত হলে এই অর্ডারে <b style="color: #ff005e;">৳{{en2bnNumber(number_format($fbDiscount))}}</b> কম দিতে হবে।<br>
                             @endif
@@ -358,70 +392,40 @@
                         </div>
                     </div>
                     @if($general->fb_full_advance_rule=='not_allowed')
-                    <p id="fbNotAllowedMsg" style="display: none;font-size: 13px;color: #777;margin-top: 15px;">Facebook পোস্ট ডিসকাউন্ট ফুল অগ্রিম পেমেন্টে প্রযোজ্য নয়।</p>
+                    <p id="fbNotAllowedMsg" class="ck-hint" style="display: none;">Facebook পোস্ট ডিসকাউন্ট ফুল অগ্রিম পেমেন্টে প্রযোজ্য নয়।</p>
                     @endif
                     @endif
 
-                    <hr>
-
-                    <div>
-                        <h4>Product Overview</h4>
-
-                        <div class="table-responsive">
-                            <table class="table table-bordered overViewTable">
-                                <tr>
-                                    <th style="width: 60px;min-width: 60px;">Image</th>
-                                    <th style="min-width: 200px;">Product</th>
-                                    <th style="width: 100px;min-width: 100px;">Price</th>
-                                    <th style="width: 60px;min-width: 60px;">Quantity</th>
-                                    <th style="width: 110px;min-width: 110px;">Total</th>
-                                </tr>
-                                @foreach($carts as $cart)
-                                <tr>
-                                    <td>
-                                        @if($cart->product)
-                                        <img src="{{asset($cart->product->image())}}" style="width: 40px;margin-right: 5px;">
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if($cart->product)
-                                        <a href="{{route('productView',$cart->product->slug?:Str::slug($cart->product->name))}}" style="color: #000000;font-weight: bold;">
-                            		      {{$cart->product->name}}
-                            		    </a>
-                                        @if($cart->color || $cart->size)
-                                        <br>
-                                        <small style="color:#777;">
-                                        @if($cart->color)Color: {{$cart->color}}@endif
-                                        @if($cart->color && $cart->size) &nbsp; @endif
-                                        @if($cart->size)Size: {{$cart->size}}@endif
-                                        </small>
-                                        @endif
-                                        @else
-                                        Not Found
-                                        @endif
-                                    </td>
-                                    <td>{{$cart->product?$cart->itemprice():0}}</td>
-                                    <td>{{$cart->quantity}}</td>
-                                    <td>
-                                        @if($cart->product)
-                        		          {{priceFullFormat($cart->quantity * $cart->itemprice())}}
-                        		        @else
-                        		           {{priceFullFormat($cart->quantity*0)}}
-                        		        @endif
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </table>
-                        </div>
-                    </div>
                 </div>
             </div>
 
-            <div class="col-md-5">
-                <div class="checkoutInfo">
+            <div class="col-lg-5">
+                <div class="checkoutInfo ck-summary">
                     <h4>অর্ডার সামারি</h4>
 
-                    <div class="ck-coupon mb-3">
+                    <div class="ck-items">
+                        @foreach($carts as $cart)
+                        @if($cart->product)
+                        <div class="ck-item">
+                            <div class="ck-item-img">
+                                <img src="{{asset($cart->product->image())}}" alt="{{$cart->product->name}}">
+                                <span class="ck-item-qty">{{$cart->quantity}}</span>
+                            </div>
+                            <div class="ck-item-info">
+                                <a href="{{route('productView',$cart->product->slug?:Str::slug($cart->product->name))}}" class="ck-item-name">{{$cart->product->name}}</a>
+                                <div class="ck-item-meta">
+                                    {{priceFullFormat($cart->itemprice())}} &times; {{$cart->quantity}}
+                                    @if($cart->color) &middot; {{$cart->color}}@endif
+                                    @if($cart->size) &middot; {{$cart->size}}@endif
+                                </div>
+                            </div>
+                            <div class="ck-item-price">{{priceFullFormat($cart->quantity * $cart->itemprice())}}</div>
+                        </div>
+                        @endif
+                        @endforeach
+                    </div>
+
+                    <div class="ck-coupon">
                         <label class="ck-label" for="coupon_code">কুপন কোড:</label>
                         <div class="input-group" id="couponApplyBox" style="{{$totals['coupon']?'display:none;':''}}">
                             <input type="text" id="coupon_code" class="form-control" placeholder="কুপন কোড থাকলে লিখুন">
@@ -470,6 +474,12 @@
                     </table>
 
                     <button type="submit" class="placeOrderbtn" id="placeOrderBtn">অর্ডার কনফার্ম করুন</button>
+
+                    <div class="ck-trust">
+                        <div><i class="fa fa-lock"></i>নিরাপদ চেকআউট</div>
+                        <div><i class="fa fa-truck"></i>ক্যাশ অন ডেলিভারি</div>
+                        <div><i class="fa fa-headset"></i>কাস্টমার সাপোর্ট</div>
+                    </div>
                 </div>
             </div>
         </div>

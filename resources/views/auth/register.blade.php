@@ -1,82 +1,77 @@
 @extends(general()->theme.'.layouts.app') @section('title')
-<title>{{general()->title}} | {{general()->subtitle}}</title>
+<title>Create Account | {{general()->title}}</title>
 @endsection @section('SEO')
-<meta name="description" content="{!!general()->meta_description!!}" />
-<meta name="keywords" content="{{general()->meta_keyword}}" />
-<meta property="og:title" content="{{general()->meta_title}}" />
-<meta property="og:description" content="{!!general()->meta_description!!}" />
-<meta property="og:image" content="{!!general()->meta_description!!}" />
-<meta property="og:url" content="{{route('index')}}" />
+<meta name="description" content="Create your {{general()->title}} account to track orders and check out faster." />
+<meta property="og:title" content="Create Account | {{general()->title}}" />
+<meta property="og:image" content="{{asset(general()->logo())}}" />
+<meta property="og:url" content="{{route('register')}}" />
 @endsection @push('css')
-@endpush 
+@include('auth.includes.authStyle')
+@endpush
 
 @section('contents')
 
-<div class="lostregis">
-	<div class="lostpassheader">
-		<h3>My Account</h3>
-		<p>Sign-Up</p>
-	</div>
-	<div class="container">
-	    <div class="row">
-	        <div class="col-md-3"></div>
-	        <div class="col-md-6">
-	            <div class="login-part">
-            		<h4>REGISTER</h4>
-            		@include(App\Models\General::first()->theme.'.alerts')
-            		<form action="{{route('register')}}" method="post">
-            		    @csrf
-            			<label for="name">
-            				Username *
-            			</label>
-            			<div class="form-group form-group-section">
-            			    <input type="name" name="name" value="{{old('name')}}" class="form-control control-section" placeholder="" required="">
-            			    @if($errors->has('name'))
-                                <span style="color:red;display: block;">{{ $errors->first('name') }}</span>
-                            @endif
-            			</div>
-            
-            			<label for="email">
-            				Email address *
-            			</label>
-            			<div class="form-group form-group-section">
-            			    <input type="email" name="email" value="{{old('email')}}" class="form-control control-section" placeholder="" required="">
-            			    @if($errors->has('email'))
-                                <span style="color:red;display: block;">{{ $errors->first('email') }}</span>
-                            @endif
-            			</div>
-            
-            			<label for="password">
-            				Password *
-            			</label>
-            			<div class="form-group form-group-section">
-            			    <input type="password" name="password" value="" class="form-control control-section" placeholder="" required="">
-            			    @if($errors->has('password'))
-                                <span style="color:red;display: block;">{{ $errors->first('password') }}</span>
-                            @endif
-            			</div>
-            
-            			<p>
-            				Your personal data will be used to support your experience throughout this website, to manage access to your account, and for other purposes described in our
-            			</p>
-            			<a href="#">Privacy Policy</a>
-            			<div>
-            				<button type="submit" class="btn submitbutton">REGISTER</button>
-            			</div>
-            		</form>
-            		
-                    <div class="row">
-                        <div class="col-md-12">
-                            <a href="{{route('login')}}">Alrady Have An Account? <span>Log-In</span></a>
-                        </div>
-                    </div>
-            		
-        		</div>
-	        </div>
-	        <div class="col-md-3"></div>
-	    </div>
+<div class="au-page">
+    <div class="container">
+        <div class="au-shell">
+            @include('auth.includes.authBrand', ['heading' => 'Join '.general()->title, 'tagline' => 'Create a free account in less than a minute.'])
 
-	</div>
+            <div class="au-form">
+                <h1>Create account</h1>
+                <p class="au-sub">Already have an account? <a href="{{route('login')}}">Log in</a></p>
+
+                @include(App\Models\General::first()->theme.'.alerts')
+
+                <form action="{{route('register')}}" method="post" class="au-submit-guard">
+                    @csrf
+                    <div class="au-field">
+                        <label for="name">Username</label>
+                        <div class="au-input {{ $errors->has('name') ? 'has-error' : '' }}">
+                            <i class="fa fa-user"></i>
+                            <input type="text" id="name" name="name" value="{{old('name')}}" placeholder="Choose a username" autocomplete="username" required autofocus>
+                        </div>
+                        @if($errors->has('name'))
+                        <div class="au-error"><i class="fa fa-circle-exclamation"></i> {{ $errors->first('name') }}</div>
+                        @endif
+                    </div>
+
+                    <div class="au-field">
+                        <label for="email">Email address</label>
+                        <div class="au-input {{ $errors->has('email') ? 'has-error' : '' }}">
+                            <i class="fa fa-envelope"></i>
+                            <input type="email" id="email" name="email" value="{{old('email')}}" placeholder="you@example.com" autocomplete="email" required>
+                        </div>
+                        @if($errors->has('email'))
+                        <div class="au-error"><i class="fa fa-circle-exclamation"></i> {{ $errors->first('email') }}</div>
+                        @endif
+                    </div>
+
+                    <div class="au-field">
+                        <label for="password">Password</label>
+                        <div class="au-input {{ $errors->has('password') ? 'has-error' : '' }}">
+                            <i class="fa fa-lock"></i>
+                            <input type="password" id="password" name="password" placeholder="At least 5 characters" autocomplete="new-password" minlength="5" required>
+                            <button type="button" class="au-eye" data-target="password" aria-label="Show password"><i class="fa fa-eye"></i></button>
+                        </div>
+                        @if($errors->has('password'))
+                        <div class="au-error"><i class="fa fa-circle-exclamation"></i> {{ $errors->first('password') }}</div>
+                        @endif
+                    </div>
+
+                    <p class="au-note">
+                        Your personal data will be used to support your experience on this website, to manage your account, and for other purposes described in our
+                        <a href="{{route('pageView','privacy-policy')}}" class="au-link">Privacy Policy</a>.
+                    </p>
+
+                    <button type="submit" class="au-submit">Create account <i class="fa fa-arrow-right"></i></button>
+                </form>
+
+                <p class="au-switch">Already a member? <a href="{{route('login')}}" class="au-link">Log in</a></p>
+            </div>
+        </div>
+    </div>
 </div>
 
-@endsection @push('js') @endpush
+@endsection @push('js')
+@include('auth.includes.authScript')
+@endpush

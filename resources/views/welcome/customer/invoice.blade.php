@@ -5,7 +5,7 @@
 <meta name="keywords" content="{{App\Models\General::latest()->first()->meta_key}}" />
 <meta property="og:title" content="{{App\Models\General::latest()->first()->name}}" />
 <meta property="og:description" content="{!!App\Models\General::latest()->first()->meta_dsc!!}" />
-<meta property="og:image" content="{!!App\Models\General::latest()->first()->meta_dsc!!}" />
+<meta property="og:image" content="{{asset(general()->logo())}}" />
 <meta property="og:url" content="{{route('index')}}" />
 
 @endsection 
@@ -21,10 +21,19 @@
             <div class="col-lg-3 usersidebardiv">
                 @include(App\Models\General::first()->theme.'.customer.includes.sidebar')
             </div>
-            <div class="col-lg-9 usermainbody" style="overflow: auto;">
+            <div class="col-lg-9 usermainbody">
                 @include(App\Models\General::first()->theme.'.alerts')
-                <p class="text-center"><span id="PrintAction" class="btn btn-sm btn-success">Print</span></p>
-                <div class="invoicePage PrintAreaContact" style="overflow:auto;">
+                <div class="cd-toolbar">
+                    <div>
+                        <h4>Order #{{ $order->invoice }}</h4>
+                        <span style="font-size:13px;color:#6b7280;">Placed on {{ $order->created_at->format('d M Y, h:i A') }}</span>
+                    </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        <a href="{{ route('customer.myOrders') }}" class="btn btn-light"><i class="fa fa-angle-left"></i> Back</a>
+                        <span id="PrintAction" class="btn btn-primary" style="cursor:pointer;"><i class="fa fa-print"></i> Print Invoice</span>
+                    </div>
+                </div>
+                <div class="invoicePage PrintAreaContact cd-card" style="overflow:auto;">
                 	<div class="container invoiceContainer" style="min-width:650px;">
                 	    <style type="text/css">
                             .invoice-inner {
@@ -43,7 +52,7 @@
                                 margin-top: 15px!important;
                             }
                             
-                            .invoice-header h6, p{
+                            .invoice-header h6, .invoicePage p{
                                 margin: 0;
                                 line-height: 15px;
                                 font-size: 12px;

@@ -5,7 +5,7 @@
 <meta name="keywords" content="{{general()->meta_key}}" />
 <meta property="og:title" content="{{general()->name}}" />
 <meta property="og:description" content="{!!general()->meta_dsc!!}" />
-<meta property="og:image" content="{!!general()->meta_dsc!!}" />
+<meta property="og:image" content="{{asset(general()->logo())}}" />
 <meta property="og:url" content="{{route('index')}}" />
 @endsection @push('css')
 <style>

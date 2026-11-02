@@ -36,7 +36,7 @@ class WelcomeController extends Controller
       function isMobileDevice() {
           return preg_match("/(android|avantgo|blackberry|bolt|boost|cricket|docomo 
       |fone|hiptop|mini|mobi|palm|phone|pie|tablet|up\.browser|up\.link|webos|wos)/i" 
-      , $_SERVER["HTTP_USER_AGENT"]); 
+      , $_SERVER["HTTP_USER_AGENT"] ?? ""); 
       }
 
       if(isMobileDevice())
@@ -250,6 +250,22 @@ class WelcomeController extends Controller
       
     }
     
+    public function offerProducts(Request $r){
+
+        // products whose selling price is below the regular price, biggest discount first
+        $products = Post::where('type',2)
+                    ->where('status','active')
+                    ->where('stock_status',true)
+                    ->whereDate('created_at','<=',now())
+                    ->where('regular_price','>',0)
+                    ->whereColumn('regular_price','>','final_price')
+                    ->orderByRaw('(regular_price - final_price) / regular_price DESC')
+                    ->orderBy('id','desc')
+                    ->paginate(16);
+
+        return view($this->device.'products.offerProducts',compact('products'));
+    }
+
     public function productSearch(Request $r){
         
         

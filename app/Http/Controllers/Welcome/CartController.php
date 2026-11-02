@@ -39,7 +39,7 @@ class CartController extends Controller
         function isMobileDevice() { 
           return preg_match("/(android|avantgo|blackberry|bolt|boost|cricket|docomo 
         |fone|hiptop|mini|mobi|palm|phone|pie|tablet|up\.browser|up\.link|webos|wos)/i" 
-        , $_SERVER["HTTP_USER_AGENT"]); 
+        , $_SERVER["HTTP_USER_AGENT"] ?? ""); 
         }
 
         if(isMobileDevice())
@@ -1256,7 +1256,7 @@ class CartController extends Controller
             $user =Auth::user();
             $cookie =Cookie::get('carts');
 			if($user && $cookie){
-			    WishList::where('cookie','<>',$cookie)->where('type',0)->delete();
+			    WishList::where('cookie','<>',$cookie)->where('user_id',$user->id)->where('type',0)->delete();
 			}
 			
 			$products = Post::whereHas('wishlists',function($qq){
@@ -1273,7 +1273,7 @@ class CartController extends Controller
             $user =Auth::user();
             $cookie =Cookie::get('carts');
 			if($user && $cookie){
-			    WishList::where('cookie','<>',$cookie)->where('type',0)->delete();
+			    WishList::where('cookie','<>',$cookie)->where('user_id',$user->id)->where('type',1)->delete();
 			}
             
 			$products = Post::whereHas('comparelists',function($qq){

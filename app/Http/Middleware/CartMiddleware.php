@@ -150,7 +150,7 @@ class CartMiddleware
            //Cookie::queue(Cookie::make('rabiul', time().'-'.Str::random(15).' browser: '.$_SERVER['HTTP_USER_AGENT'].' ip: '.$request->ip() , 43200));
             
            //Cookie::queue('carts', time().'-'.Str::random(15).' browser: '.$_SERVER['HTTP_USER_AGENT'].' ip: '.$request->ip(), 43200);
-          return $response->withCookie(cookie('carts', time().'-'.Str::random(15).' browser: '.$_SERVER['HTTP_USER_AGENT'].' ip: '.$request->ip(), 43200));
+          return $response->withCookie(cookie('carts', time().'-'.Str::random(15).' browser: '.($_SERVER['HTTP_USER_AGENT'] ?? '').' ip: '.$request->ip(), 43200));
           //return dd($response);
             return $next($request);
             

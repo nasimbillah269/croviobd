@@ -1,7 +1,6 @@
 @extends(general()->theme.'.layouts.app') @section('title')
 <title>অর্ডার সফল হয়েছে | {{general()->title}}</title>
 @endsection @section('SEO')
-<meta name="robots" content="noindex, nofollow" />
 @endsection
 
 @push('css')

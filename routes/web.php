@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Welcome\WelcomeController;
 use App\Http\Controllers\Welcome\CartController;
+use App\Http\Controllers\Welcome\SitemapController;
 use App\Http\Controllers\Customer\CustomerController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Admin\PostsController;
@@ -27,6 +28,12 @@ use App\Http\Controllers\Admin\EcommerceController;
 
 Route::get('/',[WelcomeController::class,'index'])->name('index');
 
+Route::get('/sitemap.xml',[SitemapController::class,'index'])->name('sitemap');
+Route::get('/sitemap-pages.xml',[SitemapController::class,'pages'])->name('sitemap.pages');
+Route::get('/sitemap-categories.xml',[SitemapController::class,'categories'])->name('sitemap.categories');
+Route::get('/sitemap-products.xml',[SitemapController::class,'products'])->name('sitemap.products');
+Route::get('/sitemap-blog.xml',[SitemapController::class,'blog'])->name('sitemap.blog');
+
 Route::get('/search',[WelcomeController::class,'search'])->name('search');
 Route::post('/contact-mail',[WelcomeController::class,'contactMail'])->name('contactMail');
 Route::get('/subscribe/{email}',[WelcomeController::class,'subscribe'])->name('subscribe');
@@ -41,6 +48,7 @@ Route::get('/product/category/{slug}',[WelcomeController::class,'productCategory
 Route::get('/product/{slug}',[WelcomeController::class,'productView'])->name('productView');
 
 Route::get('/product-search',[WelcomeController::class,'productSearch'])->name('productSearch');
+Route::get('/offer-products',[WelcomeController::class,'offerProducts'])->name('offerProducts');
 
 
 

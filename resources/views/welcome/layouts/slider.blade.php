@@ -11,16 +11,23 @@
                 <div class="carousel-inner">
                     @foreach(slider('Front Page Slider')->subSliders as $i => $slider)
                     <div class="carousel-item {{$i==0?'active':''}}">
+                        @if($slider->seo_description)
+                        <a href="{{ $slider->seo_description }}" class="slider-link" @if($slider->target) target="_blank" rel="noopener" @endif>
+                        @endif
                         <!-- Image Wrapper for Skeleton -->
-                        <div class="slider-image-wrapper">
+                        <div class="slider-image-wrapper {{ $slider->bannerFile ? 'has-mobile-image' : '' }}">
                             <!-- Skeleton Loader -->
                             <div class="skeleton skeleton-slider"></div>
 
                             <!-- Lazy Loading Image -->
-                            <img class="d-block w-100 lazy lazy-slider" 
-                                 data-src="{{ asset($slider->image()) }}" 
-                                 alt="SM Power Image">
+                            <img class="d-block w-100 lazy lazy-slider"
+                                 data-src="{{ asset($slider->image()) }}"
+                                 @if($slider->bannerFile) data-mobile-src="{{ asset($slider->banner()) }}" @endif
+                                 alt="{{ $slider->name ?: general()->title }}">
                         </div>
+                        @if($slider->seo_description)
+                        </a>
+                        @endif
                     </div>
                     @endforeach
                 </div>

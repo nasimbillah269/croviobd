@@ -1,10 +1,10 @@
 @extends(general()->theme.'.layouts.app') @section('title')
 <title>{{general()->title}} | {{general()->subtitle}}</title>
 @endsection @section('SEO')
-        <meta name="description" content="{!!general()->meta_description!!}" />
+        <meta name="description" content="{{Str::limit(strip_tags(general()->meta_description),158)}}" />
         <meta name="keywords" content="{{general()->meta_keyword}}" />
-        <meta property="og:title" content="{{general()->meta_title}}" />
-        <meta property="og:description" content="{!!general()->meta_description!!}" />
+        <meta property="og:title" content="{{general()->meta_title ?: general()->title}}" />
+        <meta property="og:description" content="{{Str::limit(strip_tags(general()->meta_description),158)}}" />
         <meta property="og:image" content="{{asset(general()->logo())}}" />
         <meta property="og:url" content="{{route('index')}}" />
 @endsection @push('css')
@@ -12,11 +12,14 @@
     header.sticky-header:not(.stick) .ctgMenuList {
       display: block;
     }
+    .main-container { background: #f7f7f9; padding-bottom: 24px; }
 
 </style>
 @endpush 
 
 @section('contents')
+
+<h1 class="sr-only-h1">{{general()->title}}{{general()->subtitle ? ' - '.general()->subtitle : ''}}</h1>
 
 <!--Slider Part Include Start-->
 <div class="homeFrist">

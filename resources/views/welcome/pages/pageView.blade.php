@@ -1,12 +1,19 @@
 @extends(general()->theme.'.layouts.app') @section('title')
-<title>{{general()->title}} | {{general()->subtitle}}</title>
+@php
+    // posts table stores the page meta description in seo_desc
+    $seoTitle = $page->seo_title ?: $page->name;
+    $seoDesc = Str::limit(trim(preg_replace('/\s+/', ' ', strip_tags(html_entity_decode(
+        $page->seo_desc ?: ($page->short_description ?: ($page->description ?: general()->meta_description))
+    )))), 158, '…');
+@endphp
+<title>{{$seoTitle}} - {{general()->title}}</title>
 @endsection @section('SEO')
-<meta name="title" property="og:title" content="{{$page->seo_title?:general()->title}}" />
-<meta name="description" property="og:description" content="{!!$page->seo_description?:general()->meta_description!!}" />
+<meta name="description" content="{{$seoDesc}}" />
 <meta name="keywords" content="{{$page->seo_keyword?:general()->meta_keyword}}" />
-<meta name="image" property="og:image" content="{{asset($page->image())}}" />
-<meta name="url" property="og:url" content="{{route('pageView',$page->slug?:'no-title')}}" />
-<link rel="canonical" href="{{route('pageView',$page->slug?:'no-title')}}" />
+<meta property="og:title" content="{{$seoTitle}}" />
+<meta property="og:description" content="{{$seoDesc}}" />
+<meta property="og:image" content="{{asset($page->imageFile ? $page->image() : general()->logo())}}" />
+<meta property="og:url" content="{{route('pageView',$page->slug?:'no-title')}}" />
 @endsection 
 
 @push('css')

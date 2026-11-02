@@ -252,7 +252,8 @@ body.menu-collapsed .main-menu.menu-dark:not(.expanded) .navigation > li.navigat
 .content-header .breadcrumb .breadcrumb-item a:hover { color: var(--pa-primary); }
 .content-header .breadcrumb .breadcrumb-item.active { color: var(--pa-text-2); font-weight: 500; }
 .content-header .breadcrumb .breadcrumb-item + .breadcrumb-item:before { content: '›'; color: #94a3b8; font-family: inherit; padding: 0 8px; }
-.content-header .breadcrumb-wrapper { padding-left: 0; }
+.content-header .breadcrumbs-top { margin-left: 0; margin-right: 0; }
+.content-header .breadcrumb-wrapper { padding-left: 0; padding-right: 0; }
 .content-header .content-header-right .btn-group { gap: 8px; }
 
 /* ---------- Cards ---------- */

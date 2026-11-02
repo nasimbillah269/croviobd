@@ -9,14 +9,15 @@
             <img class="lazy product-image"
                  data-src="{{ asset($product->image()) }}"
                  alt="{{ $product->name }}">
+            <noscript><img class="product-image" src="{{ asset($product->image()) }}" alt="{{ $product->name }}" style="opacity:1;"></noscript>
         </a>
 
         <div class="product-cart-items">
             <a href="javascript:void(0)" class="cart cart-item wishlistCompareUpdate" data-id="{{$product->id}}" data-url="{{route('wishlistCompareUpdate',[$product->id,'wishlist'])}}">
                 @if($product->isWl())
-                <i class="fa fa-heart"></i>
+                <i class="fa-solid fa-heart"></i>
                 @else
-                <i class="fa fa-heart-o"></i>
+                <i class="fa-regular fa-heart"></i>
                 @endif
             </a>
         </div>
@@ -35,24 +36,24 @@
 
     @if($product->discountPercent() > 0)
     <div class="badgText">
-        <p>-{{priceFullFormat($product->regular_price-$product->offerPrice())}}</p>
+        <p>{{ $product->discountPercent() }}%</p>
     </div>
     @endif
 
     <div class="product-info">
         <div class="product-description">
             <a href="{{ route('productView', $product->slug ?: Str::slug($product->name)) }}"
-               class="product-details">
-               {{ Str::limit($product->name,30) }}
+               class="product-details" title="{{ $product->name }}">
+               {{ $product->name }}
             </a>
             @if($product->weight_amount && $product->weight_unit)
             <span style="display:block;text-align:center;">{{ $product->productWeight() }}</span>
             @endif
             <div class="price">
                 @if($product->regular_price > $product->offerPrice())
-                <span class="price-cut">{{ priceFullFormat($product->regular_price) }}</span>
+                <span class="price-cut">{{ priceFullFormat($product->regular_price, 0) }}</span>
                 @endif
-                <span class="new-price">{{ priceFullFormat($product->offerPrice()) }}</span>
+                <span class="new-price">{{ priceFullFormat($product->offerPrice(), 0) }}</span>
             </div>
         </div>
         <div class="ratings">
