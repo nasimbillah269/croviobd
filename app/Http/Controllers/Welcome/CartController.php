@@ -447,7 +447,7 @@ class CartController extends Controller
     }
 
     // Single source of truth for checkout money; the checkout page mirrors this logic in JS for the live summary
-    private function checkoutTotals($carts, $zone = null, $paymentMethod = null, $districtId = null, $withFbDiscount = false){
+    private function checkoutTotals($carts, $zone = null, $paymentMethod = null, $districtId = null, $withFbDiscount = false, $fbPostType = 'post'){
 
         $general = general();
 
@@ -479,7 +479,7 @@ class CartController extends Controller
         }
 
         // Taken off straight away; admin adds it back if the post is rejected
-        $fbDiscount = $withFbDiscount ? min(fbDiscountFor($subtotal, $general), max($subtotal - $couponDisc, 0)) : 0;
+        $fbDiscount = $withFbDiscount ? min(fbDiscountFor($subtotal, $general, $fbPostType), max($subtotal - $couponDisc, 0)) : 0;
 
         $grandTotal = $subtotal - $couponDisc - $fbDiscount + $tax + $deliveryCharge;
 
@@ -630,6 +630,7 @@ class CartController extends Controller
 
         // Facebook post discount: link is optional, discount is applied now and the post is reviewed by admin later
         $fbPostKey = null;
+        $fbPostType = $r->fb_post_type == 'reels' ? 'reels' : 'post';
         $general = general();
         $fbAllowed = $general->fb_discount_status && !($r->payment_method=='full_advance' && $general->fb_full_advance_rule=='not_allowed');
         if($fbAllowed && trim((string)$r->fb_post_link) !== ''){
@@ -643,7 +644,7 @@ class CartController extends Controller
             }
         }
 
-        $totals = $this->checkoutTotals($carts, $zone, $r->payment_method, $r->district_id, (bool)$fbPostKey);
+        $totals = $this->checkoutTotals($carts, $zone, $r->payment_method, $r->district_id, (bool)$fbPostKey, $fbPostType);
 
         // Payment proof is needed whenever something must be paid in advance
         if($totals['advance'] > 0){
@@ -788,6 +789,7 @@ class CartController extends Controller
         if($fbPostKey){
             $order->fb_post_link = preg_match('#^https?://#i', trim($r->fb_post_link)) ? trim($r->fb_post_link) : 'https://'.trim($r->fb_post_link);
             $order->fb_post_key = $fbPostKey;
+            $order->fb_post_type = $fbPostType;
             $order->fb_post_status = 'pending';
         }
         $order->paid_amount=0;
@@ -831,7 +833,7 @@ class CartController extends Controller
             return Response()->json(['success' => false, 'message' => 'সতর্কতা: এই পোস্টের লিংক আগেই ব্যবহার করা হয়েছে। একটি পোস্ট একবারই ব্যবহার করা যায়।']);
         }
 
-        return Response()->json(['success' => true, 'message' => 'লিংক গ্রহণযোগ্য, ডিসকাউন্ট যোগ হয়েছে। অর্ডারের পর আমরা পোস্টটি যাচাই করব।']);
+        return Response()->json(['success' => true, 'type' => fbPostTypeFromLink($r->link), 'message' => 'লিংক গ্রহণযোগ্য, ডিসকাউন্ট যোগ হয়েছে। অর্ডারের পর আমরা পোস্টটি যাচাই করব।']);
     }
 
     private function sendOrderConfirmation($order){

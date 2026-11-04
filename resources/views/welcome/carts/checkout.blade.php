@@ -84,6 +84,21 @@
 .ck-pay-amount b { color: var(--ck-primary); font-size: 22px; }
 .ck-hint { font-size: 13px; color: #4b5563; line-height: 1.6; margin-top: 8px; }
 .ck-coupon-msg { font-size: 13.5px; margin: 6px 0 0; }
+.ck-hint a { word-break: break-word; }
+
+/* facebook post type */
+.ck-fb-types { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0 4px; }
+.ck-fb-type {
+    display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer;
+    border: 2px solid #e5e7eb; border-radius: 10px; padding: 10px 12px; font-size: 14.5px; font-weight: 600;
+    transition: border-color .2s, background .2s;
+}
+.ck-fb-type input { accent-color: var(--ck-primary); width: 16px; height: 16px; margin: 0; flex-shrink: 0; }
+.ck-fb-type b { color: var(--ck-primary); margin-left: auto; }
+.ck-fb-type.active { border-color: var(--ck-primary); background: #fff5f9; }
+
+/* mobile sticky order bar */
+.ck-mobile-bar { display: none; }
 
 /* summary */
 .checkoutInfo.ck-summary {
@@ -142,11 +157,75 @@
     .checkoutInfo.ck-summary { position: static; margin-top: 4px; }
 }
 @media (max-width: 767.98px) {
-    .checkoutPage { padding: 18px 0 40px; }
-    .ck-top h1 { font-size: 21px; }
+    .checkoutPage { padding: 12px 0 96px; }
+    .checkoutPage .container { padding-left: 10px; padding-right: 10px; }
+    .ck-top { margin-bottom: 10px; }
+    .ck-top h1 { font-size: 19px; }
     .ck-steps { display: none; }
-    .ck-card, .checkoutInfo.ck-summary { padding: 18px 16px; }
+    .ck-notice { font-size: 13px; padding: 9px 12px; gap: 9px; border-radius: 10px; margin-bottom: 12px; line-height: 1.5; }
+    .ck-notice i { font-size: 15px; }
+    .ck-card, .checkoutInfo.ck-summary { padding: 14px 12px; border-radius: 12px; margin-bottom: 12px; }
+    .ck-section-title { font-size: 15px; gap: 9px; margin-bottom: 12px; }
+    .ck-section-title .ck-num { width: 24px; height: 24px; font-size: 12px; }
     .ck-grid { grid-template-columns: 1fr; }
+    .ck-field { margin-bottom: 11px; }
+    .ck-label { font-size: 13px; margin-bottom: 4px; line-height: 1.5; }
+    .checkoutPage .form-control { min-height: 42px; padding: 8px 12px; font-size: 14px; border-radius: 8px; }
+    .checkoutPage textarea.form-control { min-height: 64px; }
+    .ck-error { font-size: 12px; }
+
+    .ck-pay-option { padding: 11px 40px 11px 42px; margin-bottom: 9px; border-radius: 10px; }
+    .ck-pay-option:before { left: 13px; top: 13px; width: 18px; height: 18px; }
+    .ck-pay-option b { font-size: 14px; }
+    .ck-pay-option small { font-size: 12px; }
+    .ck-pay-icon { right: 13px; top: 12px; font-size: 17px; }
+    .ck-offer { font-size: 11.5px; padding: 2px 9px; }
+    .ck-qr-box { padding: 12px; }
+    .ck-qr-box img { max-width: 180px; }
+    .ck-qr-box p { font-size: 13px !important; line-height: 1.5 !important; }
+    .ck-pay-amount { font-size: 14px; }
+    .ck-pay-amount b { font-size: 18px; }
+    .ck-hint { font-size: 12px; line-height: 1.55; }
+    .ck-coupon-msg { font-size: 12.5px; }
+
+    .ck-fb-types { gap: 8px; }
+    .ck-fb-type { font-size: 13px; padding: 8px 10px; gap: 6px; }
+
+    .ck-summary h4 { font-size: 16px; margin-bottom: 10px; }
+    .ck-items { max-height: 210px; margin-bottom: 10px; }
+    .ck-item { gap: 10px; padding: 8px 0; }
+    .ck-item-img img { width: 46px; height: 46px; border-radius: 8px; }
+    .ck-item-name { font-size: 13px; }
+    .ck-item-meta { font-size: 11.5px; }
+    .ck-item-price { font-size: 13px; }
+    .ck-coupon { padding: 10px 0; }
+    .ck-coupon .input-group .form-control { min-height: 40px; }
+    .ck-coupon .input-group .btn { padding: 0 12px; font-size: 13px; }
+    .ordertable td, .ordertable th { padding: 6px 0; font-size: 13.5px; }
+    .ordertable .ck-total th, .ordertable .ck-total td { font-size: 16px; padding-top: 10px; }
+    .checkoutPage .placeOrderbtn { height: 48px; font-size: 16px; border-radius: 10px; margin-top: 10px; }
+    .ck-trust { margin-top: 12px; padding-top: 12px; }
+    .ck-trust div { font-size: 11px; }
+    .ck-trust i { font-size: 15px; margin-bottom: 4px; }
+
+    /* total + confirm button always in reach; hidden while the summary button is on screen */
+    .ck-mobile-bar {
+        display: flex; align-items: center; gap: 12px;
+        position: fixed; left: 0; right: 0; bottom: 0; z-index: 999;
+        background: #fff; border-top: 1px solid var(--ck-border); box-shadow: 0 -4px 16px rgba(16,24,40,.08);
+        padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+        transition: transform .2s ease;
+    }
+    .ck-mobile-bar.ck-hide { transform: translateY(110%); }
+    .ck-mobile-bar-total { flex-shrink: 0; line-height: 1.2; }
+    .ck-mobile-bar-total small { display: block; font-size: 11px; color: var(--ck-muted); }
+    .ck-mobile-bar-total b { font-size: 17px; color: var(--ck-text); }
+    .checkoutPage .ck-mobile-bar .placeOrderbtn { flex: 1; height: 44px; margin: 0; font-size: 15px; box-shadow: none; }
+    .whatsapp-fixed { bottom: 76px; transition: bottom .2s ease; }
+    body.ck-bar-hidden .whatsapp-fixed { bottom: 16px; }
+}
+@media (max-width: 359.98px) {
+    .ck-fb-types { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
     .checkoutPage .placeOrderbtn:after { animation: none; }
@@ -353,7 +432,9 @@
                     </div>
 
                     @if($general->fb_discount_status)
-                    @php($fbDiscount = fbDiscountFor($totals['subtotal'], $general))
+                    @php($fbDiscount = fbDiscountFor($totals['subtotal'], $general, 'post'))
+                    @php($fbReelsDiscount = fbDiscountFor($totals['subtotal'], $general, 'reels'))
+                    @php($fbOldType = old('fb_post_type') == 'reels' ? 'reels' : 'post')
                     <div id="fbDiscountBox" class="ck-card">
                         <div class="ck-section-title"><span class="ck-num">৪</span> Facebook পোস্টে স্পেশাল ডিসকাউন্ট (অপশনাল)</div>
                         <label class="ck-label" for="fb_post_link">{!! nl2br(e($general->fb_discount_text ?: 'Facebook পোস্টের লিংক দিন, স্পেশাল ডিসকাউন্ট পান')) !!}</label>
@@ -362,12 +443,22 @@
                         @if ($errors->has('fb_post_link'))
                         <p class="ck-error">{{ $errors->first('fb_post_link') }}</p>
                         @endif
+                        <div class="ck-fb-types">
+                            <label class="ck-fb-type">
+                                <input type="radio" name="fb_post_type" value="post" {{$fbOldType=='post'?'checked':''}}> ফটো পোস্ট
+                                @if($fbDiscount > 0)<b style="color: #ff005e;">৳{{en2bnNumber(number_format($fbDiscount))}}</b>@endif
+                            </label>
+                            <label class="ck-fb-type">
+                                <input type="radio" name="fb_post_type" value="reels" {{$fbOldType=='reels'?'checked':''}}> রিলস
+                                @if($fbReelsDiscount > 0)<b style="color: #ff005e;">৳{{en2bnNumber(number_format($fbReelsDiscount))}}</b>@endif
+                            </label>
+                        </div>
                         <div class="ck-hint">
-                            @if($fbDiscount > 0)
-                            সঠিক পোস্টের লিংক দিলেই এই অর্ডারে <b style="color: #ff005e;">৳{{en2bnNumber(number_format($fbDiscount))}}</b> ছাড় সাথে সাথে যোগ হবে (যাচাইয়ে বাতিল হলে ছাড়টি বাদ যাবে)।<br>
+                            @if($fbDiscount > 0 || $fbReelsDiscount > 0)
+                            সঠিক লিংক দিলেই এই অর্ডারে ফটো পোস্টে <b style="color: #ff005e;">৳{{en2bnNumber(number_format($fbDiscount))}}</b> আর রিলসে <b style="color: #ff005e;">৳{{en2bnNumber(number_format($fbReelsDiscount))}}</b> ছাড় সাথে সাথে যোগ হবে (যাচাইয়ে বাতিল হলে ছাড়টি বাদ যাবে)।<br>
                             @endif
                             শর্ত: আগে আমাদের কাছ থেকে কেনা ও ডেলিভারি পাওয়া পণ্য নিয়ে Facebook পোস্ট,
-                            পোস্টে {{$general->fb_page_name ?: general()->title}} পেজ ট্যাগ বা কোলাবরেশন থাকতে হবে,
+                            পোস্টে {!! fbPageHtml($general) !!} পেজ ট্যাগ বা কোলাবরেশন থাকতে হবে,
                             আর পোস্টটি কমপক্ষে {{en2bnNumber($general->fb_post_min_days)}} দিন পুরনো হতে হবে। একটি পোস্ট একবারই ব্যবহার করা যাবে।
                         </div>
                     </div>
@@ -467,6 +558,13 @@
                 </div>
             </div>
         </div>
+        <div class="ck-mobile-bar" id="ckMobileBar">
+            <div class="ck-mobile-bar-total">
+                <small>সর্বমোট</small>
+                <b id="mbTotal"></b>
+            </div>
+            <button type="submit" class="placeOrderbtn" id="mbPlaceOrderBtn">অর্ডার কনফার্ম করুন</button>
+        </div>
         </form>
     </div>
 </div>
@@ -487,7 +585,10 @@
             codPercent: {{ (int)$general->cod_advance_percent }},
             fullAdvanceFree: {{ $general->full_advance_free_delivery ? 'true' : 'false' }},
             upazilaCharges: {},
-            fbDiscountAmount: {{ $general->fb_discount_status ? (float)fbDiscountFor($totals['subtotal'], $general) : 0 }},
+            fbDiscountAmounts: {
+                post: {{ $general->fb_discount_status ? (float)fbDiscountFor($totals['subtotal'], $general, 'post') : 0 }},
+                reels: {{ $general->fb_discount_status ? (float)fbDiscountFor($totals['subtotal'], $general, 'reels') : 0 }}
+            },
             fbLinkValid: false,
             fbNotWithFullAdvance: {{ $general->fb_discount_status && $general->fb_full_advance_rule=='not_allowed' ? 'true' : 'false' }},
             fbCheckUrl: "{{ route('fbPostCheck') }}",
@@ -522,7 +623,8 @@
             // Mirrors checkoutTotals(): only for a valid, unused link and not with full advance when that is disallowed
             var fbDiscount = 0;
             if(ck.fbLinkValid && !(ck.fbNotWithFullAdvance && method === 'full_advance')){
-                fbDiscount = Math.min(ck.fbDiscountAmount, Math.max(ck.subtotal - ck.discount, 0));
+                var fbType = $('input[name="fb_post_type"]:checked').val() === 'reels' ? 'reels' : 'post';
+                fbDiscount = Math.min(ck.fbDiscountAmounts[fbType], Math.max(ck.subtotal - ck.discount, 0));
             }
 
             var total = ck.subtotal - ck.discount - fbDiscount + ck.tax + delivery;
@@ -556,12 +658,16 @@
             }
 
             $('#sumTotal').text(money(t.total));
+            $('#mbTotal').text(money(t.total));
             $('#sumAdvanceLabel').text(t.method === 'full_advance' ? 'এখন পেমেন্ট করতে হবে' : 'এখন অগ্রিম দিতে হবে');
             $('#sumAdvance').text(t.hasZone || t.method === 'full_advance' ? money(t.advance) : '—');
             $('#sumDue').text(t.hasZone || t.method === 'full_advance' ? money(t.due) : '—');
 
             $('.ck-pay-option').removeClass('active');
             $('.ck-pay-option[data-method="' + t.method + '"]').addClass('active');
+            $('.ck-fb-type').each(function(){
+                $(this).toggleClass('active', $(this).find('input').is(':checked'));
+            });
 
             var text = '';
             if(t.method === 'full_advance'){
@@ -683,9 +789,14 @@
                 if(link !== $.trim($('#fb_post_link').val())){ return; }
                 $('#fbPostMsg').text(res.message).css('color', res.success ? '#28a745' : 'red');
                 ck.fbLinkValid = !!res.success;
+                // Only switch to Reels when the link is clearly a reel; other links keep the customer's choice
+                if(res.type === 'reels'){
+                    $('input[name="fb_post_type"][value="reels"]').prop('checked', true);
+                }
                 render();
             });
         }
+        $('input[name="fb_post_type"]').on('change', render);
         $('#fb_post_link').on('input change', function(){
             clearTimeout(fbTimer);
             fbTimer = setTimeout(checkFbLink, 400);
@@ -695,8 +806,16 @@
         }
 
         $('#checkoutForm').submit(function(){
-            $('#placeOrderBtn').prop('disabled', true).text('অর্ডার প্রসেস হচ্ছে...');
+            $('#placeOrderBtn, #mbPlaceOrderBtn').prop('disabled', true).text('অর্ডার প্রসেস হচ্ছে...');
         });
+
+        // The bottom bar would duplicate the summary button, so hide it while that one is visible
+        if('IntersectionObserver' in window){
+            new IntersectionObserver(function(entries){
+                $('#ckMobileBar').toggleClass('ck-hide', entries[0].isIntersecting);
+                $('body').toggleClass('ck-bar-hidden', entries[0].isIntersecting);
+            }).observe(document.getElementById('placeOrderBtn'));
+        }
 
         if($('#district_id').val()){
             loadUpazilas(ck.oldUpazila);

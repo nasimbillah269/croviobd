@@ -257,24 +257,21 @@
                                                         </td>
                                                     </tr>
                                                     <tr>
-                                                        <th>Discount</th>
+                                                        <th>Photo Post Discount ({{general()->currency}})</th>
                                                         <td style="padding:3px;">
-                                                            <div class="input-group">
-                                                                <input type="number" min="0" step="0.01" class="form-control form-control-sm" name="fb_discount_amount" value="{{(float)general()->fb_discount_amount}}">
-                                                                <select class="form-control form-control-sm" name="fb_discount_type">
-                                                                    <option value="flat" {{general()->fb_discount_type!='percentage'?'selected':''}}>Flat ({{general()->currency}})</option>
-                                                                    <option value="percentage" {{general()->fb_discount_type=='percentage'?'selected':''}}>Percentage (%) of products</option>
-                                                                </select>
-                                                            </div>
+                                                            <input type="number" min="0" step="1" class="form-control form-control-sm" name="fb_discount_amount" value="{{(float)general()->fb_discount_amount}}" placeholder="40">
                                                             @if ($errors->has('fb_discount_amount'))
                                                             <p style="color: red;margin: 0;font-size: 11px;">{{ $errors->first('fb_discount_amount') }}</p>
                                                             @endif
                                                         </td>
                                                     </tr>
                                                     <tr>
-                                                        <th>Maximum Discount ({{general()->currency}}) <small>for percentage, 0 = no limit</small></th>
+                                                        <th>Reels Discount ({{general()->currency}})</th>
                                                         <td style="padding:3px;">
-                                                            <input type="number" min="0" step="1" class="form-control form-control-sm" name="fb_discount_max" value="{{(float)general()->fb_discount_max}}">
+                                                            <input type="number" min="0" step="1" class="form-control form-control-sm" name="fb_reels_discount_amount" value="{{(float)general()->fb_reels_discount_amount}}" placeholder="70">
+                                                            @if ($errors->has('fb_reels_discount_amount'))
+                                                            <p style="color: red;margin: 0;font-size: 11px;">{{ $errors->first('fb_reels_discount_amount') }}</p>
+                                                            @endif
                                                         </td>
                                                     </tr>
                                                     <tr>
@@ -287,9 +284,9 @@
                                                         </td>
                                                     </tr>
                                                     <tr>
-                                                        <th>Facebook Page Name <small>(shown to customer)</small></th>
+                                                        <th>Facebook Page Name / Link <small>(shown to customer, a link opens in new tab)</small></th>
                                                         <td style="padding:3px;">
-                                                            <input type="text" class="form-control form-control-sm" name="fb_page_name" value="{{general()->fb_page_name}}" placeholder="{{general()->title}}">
+                                                            <input type="text" class="form-control form-control-sm" name="fb_page_name" value="{{general()->fb_page_name}}" placeholder="https://www.facebook.com/yourpage">
                                                         </td>
                                                     </tr>
                                                     <tr>

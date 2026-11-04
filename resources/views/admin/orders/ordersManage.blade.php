@@ -355,6 +355,7 @@
 		                        		        @else
 		                        		        <span class="badge badge-primary">Need Review</span>
 		                        		        @endif
+		                        		        <span class="badge badge-info">{{$order->fb_post_type=='reels' ? 'Reels' : 'Photo Post'}}</span>
 		                        		        <br><a href="{{$order->fb_post_link}}" target="_blank" rel="noopener noreferrer" style="word-break: break-all;"><i class="fab fa-facebook"></i> Open Post</a>
 		                        		        <br><small style="word-break: break-all;color: #777;">{{$order->fb_post_link}}</small>
 		                        		        @if($fbSameLink->count())
@@ -367,7 +368,8 @@
 		                        		        <div class="mt-1" style="border: 1px solid #1877f2;border-radius: 5px;padding: 8px;font-size: 13px;">
 		                        		            <b>Check before approve:</b>
 		                        		            <div>&#9744; Post is real and about a product bought here</div>
-		                        		            <div>&#9744; {{general()->fb_page_name ?: general()->title}} page is tagged or collaborator</div>
+		                        		            <div>&#9744; It is a {{$order->fb_post_type=='reels' ? 'Reels' : 'Photo Post'}} (Photo Post {{priceFullFormat(fbDiscountFor($order->total_price, null, 'post'))}}, Reels {{priceFullFormat(fbDiscountFor($order->total_price, null, 'reels'))}})</div>
+		                        		            <div>&#9744; {!! fbPageHtml() !!} page is tagged or collaborator</div>
 		                        		            <div>&#9744; Post date on or before <b>{{$order->created_at->copy()->subDays(general()->fb_post_min_days)->format('d M Y')}}</b> ({{general()->fb_post_min_days}} days before this order)</div>
 		                        		            <div>
 		                        		                @if($fbDelivered->count())
@@ -380,7 +382,7 @@
 		                        		                @csrf
 		                        		                <div class="input-group input-group-sm mb-1">
 		                        		                    <div class="input-group-prepend"><span class="input-group-text">Discount</span></div>
-		                        		                    <input type="number" min="0" step="1" name="discount" value="{{old('discount', $order->fb_discount > 0 ? (float)$order->fb_discount : fbDiscountFor($order->total_price))}}" class="form-control form-control-sm">
+		                        		                    <input type="number" min="0" step="1" name="discount" value="{{old('discount', $order->fb_discount > 0 ? (float)$order->fb_discount : fbDiscountFor($order->total_price, null, $order->fb_post_type ?: 'post'))}}" class="form-control form-control-sm">
 		                        		                </div>
 		                        		                @if ($errors->has('discount'))
 		                        		                <p style="color: red;margin: 0;font-size: 12px;">{{ $errors->first('discount') }}</p>

@@ -2016,9 +2016,8 @@ class EcommerceController extends Controller
 
         if($type=='facebook'){
             $check = $r->validate([
-              'fb_discount_type' => 'required|in:flat,percentage',
-              'fb_discount_amount' => 'required|numeric|min:0'.($r->fb_discount_type=='percentage'?'|max:100':''),
-              'fb_discount_max' => 'nullable|numeric|min:0',
+              'fb_discount_amount' => 'required|numeric|min:0',
+              'fb_reels_discount_amount' => 'required|numeric|min:0',
               'fb_post_min_days' => 'required|integer|min:1|max:30',
               'fb_full_advance_rule' => 'required|in:refund,not_allowed',
               'fb_page_name' => 'nullable|max:100',
@@ -2028,9 +2027,9 @@ class EcommerceController extends Controller
             ]);
 
             $general->fb_discount_status =$r->fb_discount_status ? 1 : 0;
-            $general->fb_discount_type =$r->fb_discount_type;
+            $general->fb_discount_type ='flat';
             $general->fb_discount_amount =$r->fb_discount_amount;
-            $general->fb_discount_max =$r->fb_discount_max?:0;
+            $general->fb_reels_discount_amount =$r->fb_reels_discount_amount;
             $general->fb_post_min_days =$r->fb_post_min_days;
             $general->fb_full_advance_rule =$r->fb_full_advance_rule;
             $general->fb_page_name =$r->fb_page_name;

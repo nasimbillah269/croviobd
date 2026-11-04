@@ -292,20 +292,32 @@ function fbPostKey($url){
     return substr($host.$path.($query ? '?'.http_build_query($query) : ''), 0, 191);
 }
 
-function fbDiscountFor($subtotal, $general = null){
+// Flat discount by post type: 'post' (photo post) or 'reels'
+function fbDiscountFor($subtotal, $general = null, $postType = 'post'){
     $general = $general ?: general();
-    if(!$general->fb_discount_status || $general->fb_discount_amount <= 0){
+    $discount = $postType == 'reels' ? $general->fb_reels_discount_amount : $general->fb_discount_amount;
+    if(!$general->fb_discount_status || $discount <= 0){
         return 0;
     }
 
-    if($general->fb_discount_type == 'percentage'){
-        $discount = $subtotal * ($general->fb_discount_amount / 100);
-        if($general->fb_discount_max > 0){
-            $discount = min($discount, $general->fb_discount_max);
-        }
-    }else{
-        $discount = $general->fb_discount_amount;
-    }
-
     return round(min($discount, $subtotal));
+}
+
+// Facebook page from settings as HTML: a link opening in a new tab when a URL is saved, otherwise the plain name
+function fbPageHtml($general = null){
+    $general = $general ?: general();
+    $page = trim((string)$general->fb_page_name);
+    if($page === ''){
+        return e($general->title);
+    }
+    if(preg_match('#^(https?://)?(www\.|m\.)?(facebook|fb)\.com/#i', $page)){
+        $url = preg_match('#^https?://#i', $page) ? $page : 'https://'.$page;
+        return '<a href="'.e($url).'" target="_blank" rel="noopener noreferrer" style="color: #1877f2;font-weight: 600;">'.e($general->title).'</a>';
+    }
+    return e($page);
+}
+
+// Guesses the post type from the link; reel links look like /reel/..., /share/r/... or fb.watch
+function fbPostTypeFromLink($url){
+    return preg_match('#(/reels?/|/share/r/|fb\.watch)#i', (string)$url) ? 'reels' : 'post';
 }
