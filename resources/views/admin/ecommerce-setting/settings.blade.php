@@ -299,6 +299,16 @@
                                                         </td>
                                                     </tr>
                                                     <tr>
+                                                        <th>Checkout Description <small>(shown below Photo Post / Reels)</small></th>
+                                                        <td style="padding:3px;">
+                                                            <textarea class="form-control form-control-sm" name="fb_discount_terms" rows="5">{{old('fb_discount_terms', trim((string)general()->fb_discount_terms) !== '' ? general()->fb_discount_terms : fbDiscountTermsDefault())}}</textarea>
+                                                            <small class="text-muted">Auto-filled: <code>{post}</code> photo post discount, <code>{reels}</code> reels discount, <code>{page}</code> Facebook page link, <code>{days}</code> minimum post age.</small>
+                                                            @if ($errors->has('fb_discount_terms'))
+                                                            <p style="color: red;margin: 0;font-size: 11px;">{{ $errors->first('fb_discount_terms') }}</p>
+                                                            @endif
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
                                                         <th>Full Advance Orders</th>
                                                         <td style="padding:3px;">
                                                             <select class="form-control form-control-sm" name="fb_full_advance_rule">

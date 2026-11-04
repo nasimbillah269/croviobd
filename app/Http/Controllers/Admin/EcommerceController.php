@@ -2022,6 +2022,7 @@ class EcommerceController extends Controller
               'fb_full_advance_rule' => 'required|in:refund,not_allowed',
               'fb_page_name' => 'nullable|max:100',
               'fb_discount_text' => 'nullable|max:1000',
+              'fb_discount_terms' => 'nullable|max:2000',
             ],[
               'fb_post_min_days.max' => 'Minimum post age can be at most 30 days (1 month).',
             ]);
@@ -2034,6 +2035,7 @@ class EcommerceController extends Controller
             $general->fb_full_advance_rule =$r->fb_full_advance_rule;
             $general->fb_page_name =$r->fb_page_name;
             $general->fb_discount_text =$r->fb_discount_text;
+            $general->fb_discount_terms =$r->fb_discount_terms;
             $general->save();
 
             Session::flash('success','Facebook Post Discount Setting Update Successfully Done!');

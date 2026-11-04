@@ -317,6 +317,26 @@ function fbPageHtml($general = null){
     return e($page);
 }
 
+function fbDiscountTermsDefault(){
+    return "সঠিক লিংক দিলেই এই অর্ডারে ফটো পোস্টে {post} আর রিলসে {reels} ছাড় সাথে সাথে যোগ হবে (যাচাইয়ে বাতিল হলে ছাড়টি বাদ যাবে)।\nশর্ত: আগে আমাদের কাছ থেকে কেনা ও ডেলিভারি পাওয়া পণ্য নিয়ে Facebook পোস্ট, পোস্টে {page} পেজ ট্যাগ বা কোলাবরেশন থাকতে হবে, আর পোস্টটি কমপক্ষে {days} দিন পুরনো হতে হবে। একটি পোস্ট একবারই ব্যবহার করা যাবে।";
+}
+
+// Checkout terms as HTML: admin text is escaped, then {post} {reels} {page} {days} are filled in
+function fbDiscountTermsHtml($subtotal, $general = null){
+    $general = $general ?: general();
+    $text = trim((string)$general->fb_discount_terms) !== '' ? $general->fb_discount_terms : fbDiscountTermsDefault();
+    $amount = function($n){
+        return '<b style="color: #ff005e;">৳'.en2bnNumber(number_format($n)).'</b>';
+    };
+
+    return strtr(nl2br(e($text)), [
+        '{post}' => $amount(fbDiscountFor($subtotal, $general, 'post')),
+        '{reels}' => $amount(fbDiscountFor($subtotal, $general, 'reels')),
+        '{page}' => fbPageHtml($general),
+        '{days}' => en2bnNumber($general->fb_post_min_days),
+    ]);
+}
+
 // Guesses the post type from the link; reel links look like /reel/..., /share/r/... or fb.watch
 function fbPostTypeFromLink($url){
     return preg_match('#(/reels?/|/share/r/|fb\.watch)#i', (string)$url) ? 'reels' : 'post';

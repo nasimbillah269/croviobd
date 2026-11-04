@@ -453,14 +453,7 @@
                                 @if($fbReelsDiscount > 0)<b style="color: #ff005e;">৳{{en2bnNumber(number_format($fbReelsDiscount))}}</b>@endif
                             </label>
                         </div>
-                        <div class="ck-hint">
-                            @if($fbDiscount > 0 || $fbReelsDiscount > 0)
-                            সঠিক লিংক দিলেই এই অর্ডারে ফটো পোস্টে <b style="color: #ff005e;">৳{{en2bnNumber(number_format($fbDiscount))}}</b> আর রিলসে <b style="color: #ff005e;">৳{{en2bnNumber(number_format($fbReelsDiscount))}}</b> ছাড় সাথে সাথে যোগ হবে (যাচাইয়ে বাতিল হলে ছাড়টি বাদ যাবে)।<br>
-                            @endif
-                            শর্ত: আগে আমাদের কাছ থেকে কেনা ও ডেলিভারি পাওয়া পণ্য নিয়ে Facebook পোস্ট,
-                            পোস্টে {!! fbPageHtml($general) !!} পেজ ট্যাগ বা কোলাবরেশন থাকতে হবে,
-                            আর পোস্টটি কমপক্ষে {{en2bnNumber($general->fb_post_min_days)}} দিন পুরনো হতে হবে। একটি পোস্ট একবারই ব্যবহার করা যাবে।
-                        </div>
+                        <div class="ck-hint">{!! fbDiscountTermsHtml($totals['subtotal'], $general) !!}</div>
                     </div>
                     @if($general->fb_full_advance_rule=='not_allowed')
                     <p id="fbNotAllowedMsg" class="ck-hint" style="display: none;">Facebook পোস্ট ডিসকাউন্ট ফুল অগ্রিম পেমেন্টে প্রযোজ্য নয়।</p>
