@@ -255,26 +255,13 @@
                     <div class="ck-section-title"><span class="ck-num">২</span> ডেলিভারি ঠিকানা</div>
                     <div class="ck-grid">
 
-                        <div class="ck-field ck-full">
-                            <label class="ck-label" for="zone_id">সেক্টর / বিভাগ: <span class="text-danger">*</span></label>
-                        <select name="zone_id" id="zone_id" class="form-control" required>
-                            <option value="">-- সেক্টর / বিভাগ সিলেক্ট করুন --</option>
-                            @foreach($zones as $zone)
-                            @php([$minCharge, $maxCharge] = $zone->chargeRange())
-                            <option value="{{$zone->id}}" {{old('zone_id')==$zone->id?'selected':''}}>
-                                {{$zone->bn_name ?: $zone->name}} (ডেলিভারি চার্জ ৳{{en2bnNumber(number_format($minCharge))}}{{$maxCharge > $minCharge ? '–'.en2bnNumber(number_format($maxCharge)) : ''}})
-                            </option>
-                            @endforeach
-                        </select>
-                        @if ($errors->has('zone_id'))
-                        <p class="ck-error">{{ $errors->first('zone_id') }}</p>
-                        @endif
-                        </div>
-
                         <div class="ck-field">
                             <label class="ck-label" for="district_id">জেলা: <span class="text-danger">*</span></label>
-                        <select name="district_id" id="district_id" class="form-control" required disabled>
-                            <option value="">-- আগে সেক্টর সিলেক্ট করুন --</option>
+                        <select name="district_id" id="district_id" class="form-control" required>
+                            <option value="">-- জেলা সিলেক্ট করুন --</option>
+                            @foreach($districts as $district)
+                            <option value="{{$district['id']}}" {{old('district_id')==$district['id']?'selected':''}}>{{$district['name']}}</option>
+                            @endforeach
                         </select>
                         @if ($errors->has('district_id'))
                         <p class="ck-error">{{ $errors->first('district_id') }}</p>
@@ -320,7 +307,7 @@
                     <label class="ck-pay-option" data-method="full_advance">
                         <input type="radio" name="payment_method" value="full_advance" {{old('payment_method')=='full_advance'?'checked':''}}>
                         <i class="fa fa-qrcode ck-pay-icon"></i>
-                        <b>ফুল অগ্রিম (Bangla QR)</b>
+                        <b>অনলাইন পেমেন্ট (Bangla QR)</b>
                         <small>সম্পূর্ণ টাকা এখনই Bangla QR-এ পেমেন্ট করুন।</small>
                         @if($general->full_advance_free_delivery)
                         <span class="ck-offer">ফুল অগ্রিমে ফ্রি ডেলিভারি!</span>
@@ -346,18 +333,11 @@
                         @endif
 
                         <div class="row mt-3" id="paymentProof">
-                            <div class="col-md-6 mb-2">
+                            <div class="col-md-12 mb-2">
                                 <label class="ck-label" for="trx_id">TrxID: <span class="text-danger">*</span></label>
                                 <input type="text" id="trx_id" name="trx_id" class="form-control" value="{{old('trx_id')}}" placeholder="যেমন: 9AB3CD7EF2">
                                 @if ($errors->has('trx_id'))
                                 <p class="ck-error">{{ $errors->first('trx_id') }}</p>
-                                @endif
-                            </div>
-                            <div class="col-md-6 mb-2">
-                                <label class="ck-label" for="sender_number">প্রেরকের নম্বর: <span class="text-danger">*</span></label>
-                                <input type="tel" id="sender_number" name="sender_number" class="form-control" value="{{old('sender_number')}}" placeholder="যে নম্বর থেকে পেমেন্ট করেছেন">
-                                @if ($errors->has('sender_number'))
-                                <p class="ck-error">{{ $errors->first('sender_number') }}</p>
                                 @endif
                             </div>
                             <div class="col-md-12 mb-2">
@@ -376,7 +356,7 @@
                     @php($fbDiscount = fbDiscountFor($totals['subtotal'], $general))
                     <div id="fbDiscountBox" class="ck-card">
                         <div class="ck-section-title"><span class="ck-num">৪</span> Facebook পোস্টে স্পেশাল ডিসকাউন্ট (অপশনাল)</div>
-                        <label class="ck-label" for="fb_post_link">Facebook পোস্টের লিংক দিন, স্পেশাল ডিসকাউন্ট পান</label>
+                        <label class="ck-label" for="fb_post_link">{!! nl2br(e($general->fb_discount_text ?: 'Facebook পোস্টের লিংক দিন, স্পেশাল ডিসকাউন্ট পান')) !!}</label>
                         <input type="url" id="fb_post_link" name="fb_post_link" class="form-control" value="{{old('fb_post_link')}}" placeholder="https://www.facebook.com/...">
                         <p class="ck-coupon-msg" id="fbPostMsg"></p>
                         @if ($errors->has('fb_post_link'))
@@ -384,7 +364,7 @@
                         @endif
                         <div class="ck-hint">
                             @if($fbDiscount > 0)
-                            যাচাইয়ে অনুমোদিত হলে এই অর্ডারে <b style="color: #ff005e;">৳{{en2bnNumber(number_format($fbDiscount))}}</b> কম দিতে হবে।<br>
+                            সঠিক পোস্টের লিংক দিলেই এই অর্ডারে <b style="color: #ff005e;">৳{{en2bnNumber(number_format($fbDiscount))}}</b> ছাড় সাথে সাথে যোগ হবে (যাচাইয়ে বাতিল হলে ছাড়টি বাদ যাবে)।<br>
                             @endif
                             শর্ত: আগে আমাদের কাছ থেকে কেনা ও ডেলিভারি পাওয়া পণ্য নিয়ে Facebook পোস্ট,
                             পোস্টে {{$general->fb_page_name ?: general()->title}} পেজ ট্যাগ বা কোলাবরেশন থাকতে হবে,
@@ -450,6 +430,10 @@
                           <th>কুপন ছাড়</th>
                           <td style="text-align: end;" id="sumDiscount"></td>
                         </tr>
+                        <tr id="rowFbDiscount" style="display: none;">
+                          <th>Facebook পোস্ট ছাড়</th>
+                          <td style="text-align: end;" id="sumFbDiscount"></td>
+                        </tr>
                         <tr>
                           <th>ডেলিভারি চার্জ</th>
                           <td style="text-align: end;" id="sumDelivery"></td>
@@ -502,15 +486,15 @@
             discount: {{ (float)$totals['couponDisc'] }},
             codPercent: {{ (int)$general->cod_advance_percent }},
             fullAdvanceFree: {{ $general->full_advance_free_delivery ? 'true' : 'false' }},
-            zones: {!! json_encode($zones->mapWithKeys(function($z){ return [$z->id => (float)$z->shipping_charge]; })) !!},
-            districtCharges: {},
+            upazilaCharges: {},
+            fbDiscountAmount: {{ $general->fb_discount_status ? (float)fbDiscountFor($totals['subtotal'], $general) : 0 }},
+            fbLinkValid: false,
             fbNotWithFullAdvance: {{ $general->fb_discount_status && $general->fb_full_advance_rule=='not_allowed' ? 'true' : 'false' }},
             fbCheckUrl: "{{ route('fbPostCheck') }}",
             locationsUrl: "{{ route('checkoutLocations') }}",
             couponApplyUrl: "{{ route('couponApply') }}",
             couponRemoveUrl: "{{ route('couponRemove') }}",
             csrf: "{{ csrf_token() }}",
-            oldDistrict: "{{ old('district_id') }}",
             oldUpazila: "{{ old('upazila_id') }}"
         };
 
@@ -524,15 +508,10 @@
         }
 
         function calculate(){
-            var zoneId = $('#zone_id').val();
+            var upazilaId = $('#upazila_id').val();
             var method = $('input[name="payment_method"]:checked').val();
-            var hasZone = zoneId !== '' && ck.zones[zoneId] !== undefined;
-
-            var districtId = $('#district_id').val();
-            var delivery = hasZone ? ck.zones[zoneId] : 0;
-            if(hasZone && districtId && ck.districtCharges[districtId] !== undefined){
-                delivery = ck.districtCharges[districtId];
-            }
+            var hasZone = !!upazilaId && ck.upazilaCharges[upazilaId] !== undefined;
+            var delivery = hasZone ? ck.upazilaCharges[upazilaId] : 0;
             var baseDelivery = delivery;
             var freeDelivery = false;
             if(method === 'full_advance' && ck.fullAdvanceFree){
@@ -540,7 +519,13 @@
                 delivery = 0;
             }
 
-            var total = ck.subtotal - ck.discount + ck.tax + delivery;
+            // Mirrors checkoutTotals(): only for a valid, unused link and not with full advance when that is disallowed
+            var fbDiscount = 0;
+            if(ck.fbLinkValid && !(ck.fbNotWithFullAdvance && method === 'full_advance')){
+                fbDiscount = Math.min(ck.fbDiscountAmount, Math.max(ck.subtotal - ck.discount, 0));
+            }
+
+            var total = ck.subtotal - ck.discount - fbDiscount + ck.tax + delivery;
             var advance = 0;
             if(method === 'full_advance'){
                 advance = total;
@@ -548,7 +533,7 @@
                 advance = Math.ceil(delivery * ck.codPercent / 100);
             }
 
-            return {hasZone: hasZone, method: method, delivery: delivery, baseDelivery: baseDelivery, freeDelivery: freeDelivery, total: total, advance: advance, due: total - advance};
+            return {hasZone: hasZone, method: method, delivery: delivery, baseDelivery: baseDelivery, freeDelivery: freeDelivery, fbDiscount: fbDiscount, total: total, advance: advance, due: total - advance};
         }
 
         function render(){
@@ -557,11 +542,13 @@
             $('#sumSubtotal').text(money(ck.subtotal));
             $('#rowDiscount').toggle(ck.discount > 0);
             $('#sumDiscount').text('- ' + money(ck.discount));
+            $('#rowFbDiscount').toggle(t.fbDiscount > 0);
+            $('#sumFbDiscount').text('- ' + money(t.fbDiscount));
             $('#rowTax').toggle(ck.tax > 0);
             $('#sumTax').text(money(ck.tax));
 
             if(!t.hasZone){
-                $('#sumDelivery').html('<small class="text-muted">সেক্টর সিলেক্ট করুন</small>');
+                $('#sumDelivery').html('<small class="text-muted">থানা সিলেক্ট করুন</small>');
             }else if(t.freeDelivery){
                 $('#sumDelivery').html('<del class="text-muted">' + money(t.baseDelivery) + '</del> <b class="text-success">৳০ (ফ্রি)</b>');
             }else{
@@ -580,10 +567,10 @@
             if(t.method === 'full_advance'){
                 text = 'সম্পূর্ণ <b>' + money(t.advance) + '</b> Bangla QR-এ পেমেন্ট করুন';
                 if(!t.hasZone){
-                    text += '<br><small class="text-muted">ডেলিভারি চার্জসহ সঠিক হিসাব দেখতে সেক্টর সিলেক্ট করুন</small>';
+                    text += '<br><small class="text-muted">ডেলিভারি চার্জসহ সঠিক হিসাব দেখতে জেলা ও থানা সিলেক্ট করুন</small>';
                 }
             }else if(!t.hasZone){
-                text = '<small>অগ্রিমের পরিমাণ দেখতে আগে ঠিকানার সেক্টর / বিভাগ সিলেক্ট করুন</small>';
+                text = '<small>অগ্রিমের পরিমাণ দেখতে আগে ঠিকানার জেলা ও থানা সিলেক্ট করুন</small>';
             }else if(t.advance > 0){
                 text = 'ডেলিভারি চার্জের ' + bn(ck.codPercent) + '% অগ্রিম <b>' + money(t.advance) + '</b> Bangla QR-এ পেমেন্ট করুন'
                     + '<br><small>ডেলিভারির সময় দিতে হবে: ' + money(t.due) + '</small>';
@@ -601,7 +588,7 @@
             var needsProof = t.advance > 0 || (t.method === 'full_advance');
             $('#qrBox').toggle(t.method === 'full_advance' || !t.hasZone || t.advance > 0);
             $('#paymentProof').toggle(needsProof);
-            $('#trx_id, #sender_number').prop('required', needsProof && t.hasZone);
+            $('#trx_id').prop('required', needsProof && t.hasZone);
         }
 
         function fillSelect($select, items, placeholder, selected){
@@ -612,52 +599,28 @@
             $select.prop('disabled', items.length === 0);
         }
 
-        function loadDistricts(selected, upazilaSelected){
-            var zone = $('#zone_id').val();
-            fillSelect($('#district_id'), [], zone ? 'লোড হচ্ছে...' : '-- আগে সেক্টর সিলেক্ট করুন --');
-            fillSelect($('#upazila_id'), [], '-- আগে জেলা সিলেক্ট করুন --');
-            if(!zone){ return; }
-
-            $.get(ck.locationsUrl, {zone: zone}, function(res){
-                // Remember per-district charges; show the charge next to districts that differ from the zone default
-                ck.districtCharges = {};
-                $.each(res.items, function(i, item){
-                    ck.districtCharges[item.id] = item.charge;
-                    if(item.charge !== ck.zones[zone]){
-                        item.name += ' (৳' + bn(item.charge) + ')';
-                    }
-                });
-                fillSelect($('#district_id'), res.items, '-- জেলা সিলেক্ট করুন --', selected);
-                // A zone with a single district (e.g. Dhaka City) skips a pointless step
-                if(!selected && res.items.length === 1){
-                    $('#district_id').val(res.items[0].id);
-                    selected = res.items[0].id;
-                }
-                if(selected){ loadUpazilas(upazilaSelected); }
-                render();
-            });
-        }
-
         function loadUpazilas(selected){
-            var zone = $('#zone_id').val();
             var district = $('#district_id').val();
+            ck.upazilaCharges = {};
             fillSelect($('#upazila_id'), [], district ? 'লোড হচ্ছে...' : '-- আগে জেলা সিলেক্ট করুন --');
             if(!district){ return; }
 
-            $.get(ck.locationsUrl, {zone: zone, district: district}, function(res){
+            $.get(ck.locationsUrl, {district: district}, function(res){
+                // A district can span zones (e.g. Dhaka City / outside), so the charge is kept per thana
+                $.each(res.items, function(i, item){
+                    ck.upazilaCharges[item.id] = item.charge;
+                });
                 fillSelect($('#upazila_id'), res.items, '-- উপজেলা / থানা সিলেক্ট করুন --', selected);
+                render();
             });
         }
-
-        $('#zone_id').change(function(){
-            loadDistricts();
-            render();
-        });
 
         $('#district_id').change(function(){
             loadUpazilas();
             render();
         });
+
+        $('#upazila_id').change(render);
 
         $('input[name="payment_method"]').change(render);
 
@@ -706,24 +669,37 @@
             });
         });
 
-        // Warns straight away when the post link is invalid or was already used
-        $('#fb_post_link').on('change', function(){
-            var link = $.trim($(this).val());
+        // Checks the link as it is typed/pasted; a valid, unused link takes the discount off the summary right away
+        var fbTimer = null;
+        function checkFbLink(){
+            var link = $.trim($('#fb_post_link').val());
+            ck.fbLinkValid = false;
+            render();
             if(!link){
                 $('#fbPostMsg').text('');
                 return;
             }
             $.get(ck.fbCheckUrl, {link: link}, function(res){
+                if(link !== $.trim($('#fb_post_link').val())){ return; }
                 $('#fbPostMsg').text(res.message).css('color', res.success ? '#28a745' : 'red');
+                ck.fbLinkValid = !!res.success;
+                render();
             });
+        }
+        $('#fb_post_link').on('input change', function(){
+            clearTimeout(fbTimer);
+            fbTimer = setTimeout(checkFbLink, 400);
         });
+        if($.trim($('#fb_post_link').val())){
+            checkFbLink();
+        }
 
         $('#checkoutForm').submit(function(){
             $('#placeOrderBtn').prop('disabled', true).text('অর্ডার প্রসেস হচ্ছে...');
         });
 
-        if($('#zone_id').val()){
-            loadDistricts(ck.oldDistrict, ck.oldUpazila);
+        if($('#district_id').val()){
+            loadUpazilas(ck.oldUpazila);
         }
         render();
 

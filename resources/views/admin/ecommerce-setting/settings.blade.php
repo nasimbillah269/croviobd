@@ -293,6 +293,15 @@
                                                         </td>
                                                     </tr>
                                                     <tr>
+                                                        <th>Checkout Text <small>(shown above the link field)</small></th>
+                                                        <td style="padding:3px;">
+                                                            <textarea class="form-control form-control-sm" name="fb_discount_text" rows="3" placeholder="Facebook পোস্টের লিংক দিন, স্পেশাল ডিসকাউন্ট পান">{{general()->fb_discount_text}}</textarea>
+                                                            @if ($errors->has('fb_discount_text'))
+                                                            <p style="color: red;margin: 0;font-size: 11px;">{{ $errors->first('fb_discount_text') }}</p>
+                                                            @endif
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
                                                         <th>Full Advance Orders</th>
                                                         <td style="padding:3px;">
                                                             <select class="form-control form-control-sm" name="fb_full_advance_rule">

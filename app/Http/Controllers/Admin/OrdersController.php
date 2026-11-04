@@ -1495,22 +1495,25 @@ class OrdersController extends Controller
         $order->fb_reviewed_at =Carbon::now();
         $order->fb_reviewed_by =Auth::id();
 
+        // The discount was already taken off at checkout, so swap it for the reviewed amount (0 when rejected)
+        $newDiscount =$r->action=='approve' ? round($r->discount) : 0;
+        $order->grand_total =max($order->grand_total + $order->fb_discount - $newDiscount, 0);
+        $order->fb_discount =$newDiscount;
+
+        if($order->grand_total >= $order->paid_amount){
+            $order->due_amount =$order->grand_total-$order->paid_amount;
+            $order->extra_amount =0;
+        }else{
+            $order->due_amount =0;
+            $order->extra_amount =$order->paid_amount-$order->grand_total;
+        }
+        if($order->paid_amount > 0){
+            $order->payment_status =$order->due_amount==0 ? 'paid' : 'partial';
+        }
+
         if($r->action=='approve'){
 
             $order->fb_post_status ='approved';
-            $order->fb_discount =round($r->discount);
-            $order->grand_total =max($order->grand_total - $order->fb_discount, 0);
-
-            if($order->grand_total >= $order->paid_amount){
-                $order->due_amount =$order->grand_total-$order->paid_amount;
-                $order->extra_amount =0;
-            }else{
-                $order->due_amount =0;
-                $order->extra_amount =$order->paid_amount-$order->grand_total;
-            }
-            if($order->paid_amount > 0){
-                $order->payment_status =$order->due_amount==0 ? 'paid' : 'partial';
-            }
             $order->save();
 
             $msg ="প্রিয় {$order->name}, আপনার Facebook পোস্ট যাচাই হয়েছে! অর্ডার #{$order->invoice} এ ".number_format($order->fb_discount)." টাকা স্পেশাল ডিসকাউন্ট দেওয়া হয়েছে। নতুন মোট: ".number_format($order->grand_total)." টাকা। - {$general->title}";
@@ -1519,10 +1522,9 @@ class OrdersController extends Controller
         }else{
 
             $order->fb_post_status ='rejected';
-            $order->fb_discount =0;
             $order->save();
 
-            $msg ="প্রিয় {$order->name}, অর্ডার #{$order->invoice} এর Facebook পোস্ট ডিসকাউন্ট দেওয়া যায়নি। কারণ: {$r->note}। আপনার অর্ডার আগের মতোই চলবে। - {$general->title}";
+            $msg ="প্রিয় {$order->name}, অর্ডার #{$order->invoice} এর Facebook পোস্ট ডিসকাউন্ট দেওয়া যায়নি। কারণ: {$r->note}। ডিসকাউন্ট বাদ দিয়ে নতুন মোট: ".number_format($order->grand_total)." টাকা। - {$general->title}";
             $flash ='Facebook discount rejected';
         }
 

@@ -129,7 +129,7 @@
                 @if($order->fb_post_status=='pending')
                 <tr>
                     <th>Facebook পোস্ট ডিসকাউন্ট</th>
-                    <td>যাচাই চলছে। অনুমোদিত হলে @if($fbDiscount = fbDiscountFor($order->total_price))<b>৳{{en2bnNumber(number_format($fbDiscount))}}</b> @endif কম দিতে হবে (আগেই পরিশোধ করে থাকলে ফেরত দেওয়া হবে)। ফলাফল আপনাকে জানানো হবে।</td>
+                    <td>@if($order->fb_discount > 0)<b>৳{{en2bnNumber(number_format($order->fb_discount))}}</b> ছাড় অর্ডারে যোগ করা হয়েছে। @endif পোস্টটি যাচাই চলছে; বাতিল হলে ছাড়টি বাদ যাবে। ফলাফল আপনাকে জানানো হবে।</td>
                 </tr>
                 @endif
                 <tr>

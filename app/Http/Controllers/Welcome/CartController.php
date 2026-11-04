@@ -447,7 +447,7 @@ class CartController extends Controller
     }
 
     // Single source of truth for checkout money; the checkout page mirrors this logic in JS for the live summary
-    private function checkoutTotals($carts, $zone = null, $paymentMethod = null, $districtId = null){
+    private function checkoutTotals($carts, $zone = null, $paymentMethod = null, $districtId = null, $withFbDiscount = false){
 
         $general = general();
 
@@ -478,7 +478,10 @@ class CartController extends Controller
             $deliveryCharge = 0;
         }
 
-        $grandTotal = $subtotal - $couponDisc + $tax + $deliveryCharge;
+        // Taken off straight away; admin adds it back if the post is rejected
+        $fbDiscount = $withFbDiscount ? min(fbDiscountFor($subtotal, $general), max($subtotal - $couponDisc, 0)) : 0;
+
+        $grandTotal = $subtotal - $couponDisc - $fbDiscount + $tax + $deliveryCharge;
 
         if($paymentMethod == 'full_advance'){
             $advance = $grandTotal;
@@ -492,6 +495,7 @@ class CartController extends Controller
             'subtotal' => $subtotal,
             'coupon' => $coupon,
             'couponDisc' => $couponDisc,
+            'fbDiscount' => $fbDiscount,
             'tax' => $tax,
             'deliveryCharge' => $deliveryCharge,
             'freeDelivery' => $freeDelivery,
@@ -518,31 +522,63 @@ class CartController extends Controller
         }
 
         $general = general();
-        $zones = DeliveryZone::with('districtCharges')->where('status','active')->orderBy('drag')->get();
         $totals = $this->checkoutTotals($carts);
 
-    	return view($this->device.'checkout',compact('user','carts','zones','totals','general'));
+        // Every district covered by an active zone; the zone itself is resolved from the chosen thana
+        $districts = collect();
+        foreach($this->activeZones() as $zone){
+            foreach($zone->districts() as $district){
+                $districts->put($district->id, ['id' => $district->id, 'name' => $this->locationName($district)]);
+            }
+        }
+        $districts = $districts->sortBy('name')->values();
+
+    	return view($this->device.'checkout',compact('user','carts','districts','totals','general'));
+    }
+
+    private function activeZones(){
+        return DeliveryZone::with('districtCharges')->where('status','active')->orderBy('drag')->get();
+    }
+
+    private function locationName($item){
+        $bnName = trim(preg_replace('/[\x{200B}-\x{200F}\x{FEFF}]/u', '', (string)$item->bn_name));
+        return $bnName ?: $item->name;
+    }
+
+    // A district can be split across zones (e.g. Dhaka City / outside Dhaka), so the thana decides the zone
+    private function zoneForUpazila($districtId, $upazilaId){
+        $district = Country::where('type', 3)->find($districtId);
+        if(!$district){
+            return null;
+        }
+        return $this->activeZones()->first(function($zone) use ($district, $upazilaId){
+            return $zone->division_id == $district->parent_id && $zone->hasUpazila($district->id, $upazilaId);
+        });
     }
 
     public function checkoutLocations(Request $r){
 
-        $zone = DeliveryZone::with('districtCharges')->where('status','active')->find($r->zone);
-        if(!$zone){
+        $district = Country::where('type', 3)->find($r->district);
+        if(!$district){
             return Response()->json(['success' => false, 'items' => []]);
         }
 
-        $items = $r->district ? $zone->upazilas($r->district) : $zone->districts();
+        $items = collect();
+        foreach($this->activeZones() as $zone){
+            if($zone->division_id != $district->parent_id){
+                continue;
+            }
+            $charge = $zone->chargeFor($district->id);
+            foreach($zone->upazilas($district->id) as $upazila){
+                if(!$items->has($upazila->id)){
+                    $items->put($upazila->id, ['id' => $upazila->id, 'name' => $this->locationName($upazila), 'charge' => $charge]);
+                }
+            }
+        }
 
         return Response()->json([
             'success' => true,
-            'items' => $items->map(function($item) use ($zone, $r){
-                $bnName = trim(preg_replace('/[\x{200B}-\x{200F}\x{FEFF}]/u', '', (string)$item->bn_name));
-                $row = ['id' => $item->id, 'name' => $bnName ?: $item->name];
-                if(!$r->district){
-                    $row['charge'] = $zone->chargeFor($item->id);
-                }
-                return $row;
-            })->sortBy('name')->values(),
+            'items' => $items->sortBy('name')->values(),
         ]);
     }
 
@@ -559,7 +595,6 @@ class CartController extends Controller
             'name' => 'required|max:100',
             'mobile' => ['required','regex:/^(?:\+?88)?01[3-9]\d{8}$/'],
             'email' => 'nullable|email|max:150',
-            'zone_id' => 'required|numeric',
             'district_id' => 'required|numeric',
             'upazila_id' => 'required|numeric',
             'address' => 'required|max:500',
@@ -570,7 +605,6 @@ class CartController extends Controller
             'mobile.required' => 'মোবাইল নম্বর লিখুন।',
             'mobile.regex' => 'সঠিক মোবাইল নম্বর লিখুন (যেমন: 01XXXXXXXXX)।',
             'email.email' => 'সঠিক ইমেইল ঠিকানা লিখুন।',
-            'zone_id.required' => 'সেক্টর / বিভাগ সিলেক্ট করুন।',
             'district_id.required' => 'জেলা সিলেক্ট করুন।',
             'upazila_id.required' => 'উপজেলা / থানা সিলেক্ট করুন।',
             'address.required' => 'আপনার ঠিকানা (বাসা/রোড/এলাকা) লিখুন।',
@@ -583,9 +617,9 @@ class CartController extends Controller
             return back()->withInput()->with('nameError', 'This field is required your Name. Not Allow Email or Mobile.');
         }
 
-        $zone = DeliveryZone::with('districtCharges')->where('status','active')->find($r->zone_id);
-        if(!$zone || !$zone->hasUpazila($r->district_id, $r->upazila_id)){
-            return back()->withInput()->withErrors(['zone_id' => 'সঠিক সেক্টর, জেলা ও উপজেলা সিলেক্ট করুন।']);
+        $zone = $this->zoneForUpazila($r->district_id, $r->upazila_id);
+        if(!$zone){
+            return back()->withInput()->withErrors(['upazila_id' => 'সঠিক জেলা ও উপজেলা / থানা সিলেক্ট করুন।']);
         }
 
         $cookie = $r->cookie('carts');
@@ -594,21 +628,7 @@ class CartController extends Controller
             return redirect()->route('carts')->with('info', 'Sorry, Your Cart Is empty.');
         }
 
-        $totals = $this->checkoutTotals($carts, $zone, $r->payment_method, $r->district_id);
-
-        // Payment proof is needed whenever something must be paid in advance
-        if($totals['advance'] > 0){
-            $r->validate([
-                'trx_id' => 'required|max:50',
-                'sender_number' => ['required','regex:/^(?:\+?88)?01[3-9]\d{8}$/'],
-            ],[
-                'trx_id.required' => 'পেমেন্টের TrxID লিখুন।',
-                'sender_number.required' => 'যে নম্বর থেকে পেমেন্ট করেছেন সেটি লিখুন।',
-                'sender_number.regex' => 'প্রেরকের সঠিক মোবাইল নম্বর লিখুন।',
-            ]);
-        }
-
-        // Facebook post discount: link is optional, checked here and approved by admin later
+        // Facebook post discount: link is optional, discount is applied now and the post is reviewed by admin later
         $fbPostKey = null;
         $general = general();
         $fbAllowed = $general->fb_discount_status && !($r->payment_method=='full_advance' && $general->fb_full_advance_rule=='not_allowed');
@@ -621,6 +641,17 @@ class CartController extends Controller
             if($this->fbPostUsed($fbPostKey)){
                 return back()->withInput()->withErrors(['fb_post_link' => 'এই পোস্টের লিংক আগেই একটি অর্ডারে ব্যবহার করা হয়েছে। একটি পোস্ট একবারই ব্যবহার করা যায়।']);
             }
+        }
+
+        $totals = $this->checkoutTotals($carts, $zone, $r->payment_method, $r->district_id, (bool)$fbPostKey);
+
+        // Payment proof is needed whenever something must be paid in advance
+        if($totals['advance'] > 0){
+            $r->validate([
+                'trx_id' => 'required|max:50',
+            ],[
+                'trx_id.required' => 'পেমেন্টের TrxID লিখুন।',
+            ]);
         }
 
         $district = Country::find($r->district_id);
@@ -745,7 +776,8 @@ class CartController extends Controller
         $order->shipping_charge =$totals['deliveryCharge'];
         $order->tax =$totals['tax'];
         $order->coupon_discount =$totals['couponDisc'];
-        $order->grand_total =($order->total_price + $order->shipping_charge + $order->tax) - ($order->coupon_discount+$order->coin_discount);
+        $order->fb_discount =$totals['fbDiscount'];
+        $order->grand_total =($order->total_price + $order->shipping_charge + $order->tax) - ($order->coupon_discount+$order->coin_discount+$order->fb_discount);
 
         // Advance stays unverified (paid_amount = 0) until admin checks the TrxID
         $order->payment_method = $r->payment_method=='full_advance' ? 'Full Advance (Bangla QR)' : 'Cash On Delivery';
@@ -799,7 +831,7 @@ class CartController extends Controller
             return Response()->json(['success' => false, 'message' => 'সতর্কতা: এই পোস্টের লিংক আগেই ব্যবহার করা হয়েছে। একটি পোস্ট একবারই ব্যবহার করা যায়।']);
         }
 
-        return Response()->json(['success' => true, 'message' => 'লিংক গ্রহণযোগ্য। অর্ডারের পর আমরা যাচাই করে ডিসকাউন্ট দেব।']);
+        return Response()->json(['success' => true, 'message' => 'লিংক গ্রহণযোগ্য, ডিসকাউন্ট যোগ হয়েছে। অর্ডারের পর আমরা পোস্টটি যাচাই করব।']);
     }
 
     private function sendOrderConfirmation($order){

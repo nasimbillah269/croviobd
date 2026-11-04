@@ -380,7 +380,7 @@
 		                        		                @csrf
 		                        		                <div class="input-group input-group-sm mb-1">
 		                        		                    <div class="input-group-prepend"><span class="input-group-text">Discount</span></div>
-		                        		                    <input type="number" min="0" step="1" name="discount" value="{{old('discount', fbDiscountFor($order->total_price))}}" class="form-control form-control-sm">
+		                        		                    <input type="number" min="0" step="1" name="discount" value="{{old('discount', $order->fb_discount > 0 ? (float)$order->fb_discount : fbDiscountFor($order->total_price))}}" class="form-control form-control-sm">
 		                        		                </div>
 		                        		                @if ($errors->has('discount'))
 		                        		                <p style="color: red;margin: 0;font-size: 12px;">{{ $errors->first('discount') }}</p>
