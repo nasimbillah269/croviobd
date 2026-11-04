@@ -528,10 +528,16 @@ class CartController extends Controller
         $districts = collect();
         foreach($this->activeZones() as $zone){
             foreach($zone->districts() as $district){
-                $districts->put($district->id, ['id' => $district->id, 'name' => $this->locationName($district)]);
+                $districts->put($district->id, ['id' => $district->id, 'name' => $this->locationName($district), 'en' => strtolower(trim($district->name))]);
             }
         }
-        $districts = $districts->sortBy('name')->values();
+        // Dhaka first since most orders come from there, the rest alphabetical
+        $districts = $districts->sortBy(function($district){
+            return [in_array($district['en'], ['dhaka', 'dhaka district']) ? 0 : 1, $district['name']];
+        })->map(function($district){
+            unset($district['en']);
+            return $district;
+        })->values();
 
     	return view($this->device.'checkout',compact('user','carts','districts','totals','general'));
     }
