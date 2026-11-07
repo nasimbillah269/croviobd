@@ -82,6 +82,80 @@
 .ck-qr-box p { font-size: 14px; }
 .ck-pay-amount { text-align: center; font-size: 17px; margin-bottom: 12px; }
 .ck-pay-amount b { color: var(--ck-primary); font-size: 22px; }
+/* Premium highlight card: rounded gradient dashed border that slowly runs around the box */
+.ck-pay-amount:not(:empty) {
+    position: relative;
+    padding: 16px 18px 14px;
+    border-radius: 14px;
+    line-height: 1.75;
+    color: #1f2937;
+    background: linear-gradient(135deg, #ffffff 0%, #fff6fa 100%);
+    box-shadow: 0 8px 24px rgba(230, 0, 126, .08), 0 1px 3px rgba(17, 24, 39, .05);
+}
+.ck-pay-amount:not(:empty)::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 14px;
+    pointer-events: none;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23e6007e'/%3E%3Cstop offset='1' stop-color='%23ff8a00'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100%25' height='100%25' rx='14' ry='14' fill='none' stroke='url(%23g)' stroke-width='4' stroke-dasharray='7 6' stroke-linecap='round'%3E%3Canimate attributeName='stroke-dashoffset' from='0' to='-26' dur='1.6s' repeatCount='indefinite'/%3E%3C/rect%3E%3C/svg%3E") no-repeat;
+}
+.ck-pay-amount:not(:empty) b {
+    display: inline-block;
+    padding: 0 10px;
+    margin: 0 2px;
+    border-radius: 8px;
+    font-weight: 700;
+    letter-spacing: .2px;
+    color: #c2006a;
+    background: linear-gradient(135deg, rgba(230, 0, 126, .10), rgba(255, 138, 0, .12));
+    position: relative;
+    overflow: hidden;
+    vertical-align: middle;
+    animation: ckPopIn .5s cubic-bezier(.2, .9, .3, 1.3) both;
+}
+.ck-pay-amount:not(:empty) b:nth-of-type(2) { animation-delay: .12s; }
+.ck-pay-amount:not(:empty) b:nth-of-type(2)::after { animation-delay: .4s; }
+/* light shine that sweeps across the amount every few seconds */
+.ck-pay-amount:not(:empty) b::after {
+    content: "";
+    position: absolute;
+    top: 0; bottom: 0;
+    left: -60%;
+    width: 45%;
+    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .85), transparent);
+    transform: skewX(-20deg);
+    animation: ckShine 3.2s ease-in-out infinite;
+}
+@keyframes ckShine {
+    0%, 55% { left: -60%; }
+    85%, 100% { left: 130%; }
+}
+/* the text fades up each time the amount is (re)calculated */
+@keyframes ckPopIn {
+    from { opacity: 0; transform: translateY(6px) scale(.92); }
+    to   { opacity: 1; transform: none; }
+}
+@keyframes ckFadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: none; }
+}
+.ck-pay-amount:not(:empty) small {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 3px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    background: #f3f4f6;
+    animation: ckFadeUp .5s ease-out .25s both;
+}
+@media (prefers-reduced-motion: reduce) {
+    .ck-pay-amount:not(:empty)::before { background-image: none; border: 1.5px dashed #e6007e; }
+    .ck-pay-amount:not(:empty) b, .ck-pay-amount:not(:empty) b::after,
+    .ck-pay-amount:not(:empty) small { animation: none; }
+}
 .ck-hint { font-size: 13px; color: #4b5563; line-height: 1.6; margin-top: 8px; }
 .ck-coupon-msg { font-size: 13.5px; margin: 6px 0 0; }
 .ck-hint a { word-break: break-word; }
