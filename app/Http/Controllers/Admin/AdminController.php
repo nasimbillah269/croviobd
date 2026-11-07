@@ -33,7 +33,6 @@ use App\Mail\RegistrationMail;
 use Illuminate\Validation\Rule;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use MikeMcLin\WpPassword\Facades\WpPassword;
 
 class AdminController extends Controller
 {
@@ -2766,7 +2765,7 @@ class AdminController extends Controller
             $to=Carbon::now()->format('Y-m-d');
         }
         
-        $day =Carbon::parse($from)->diffInDays(Carbon::parse($to))+1;
+        $day =(int) abs(Carbon::parse($from)->diffInDays(Carbon::parse($to)))+1;
         
         
         if($type=='products'){

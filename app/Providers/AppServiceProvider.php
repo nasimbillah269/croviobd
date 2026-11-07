@@ -39,8 +39,10 @@ class AppServiceProvider extends ServiceProvider
         \Config::set("services.google.redirect", $general->google_client_redirect_url);
         
         \Config::set("mail.mailers.smtp.transport", $general->mail_driver);
-        \Config::set("mail.mailers.smtp.host", $general->mail_host);
-        \Config::set("mail.mailers.smtp.port", $general->mail_port);
+        // Symfony Mailer (Laravel 9+) needs a string host and an int port; an empty
+        // setting must fail as a normal exception (caught by try/catch), not a TypeError.
+        \Config::set("mail.mailers.smtp.host", (string) $general->mail_host);
+        \Config::set("mail.mailers.smtp.port", is_numeric($general->mail_port) ? (int) $general->mail_port : null);
         \Config::set("mail.mailers.smtp.encryption", $general->mail_encryption);
         \Config::set("mail.mailers.smtp.username", $general->mail_username);
         \Config::set("mail.mailers.smtp.password", $general->mail_password);
