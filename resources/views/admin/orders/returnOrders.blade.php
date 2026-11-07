@@ -111,7 +111,7 @@
 								    		    <span>No Product</span>
 								    		    @endif
 								    		 </td>
-								    		<td>{{App\Models\General::first()->currency}} {{number_format($item->return_price)}}</td>
+								    		<td>{{general()->currency}} {{number_format($item->return_price)}}</td>
 								    		<td>
 								    		    @if($item->status=='confirmed')
 								                <span class="badge badge-info" style="background: #3f51b5;">{{ucfirst($item->status)}}</span>

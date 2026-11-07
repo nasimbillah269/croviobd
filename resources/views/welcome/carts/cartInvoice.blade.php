@@ -29,7 +29,7 @@
                 <div class="col-lg-12" style="padding:0;"> 
                         
                         
-                @include(App\Models\General::first()->theme.'.alerts')
+                @include(general()->theme.'.alerts')
                 <p class="text-center"><span id="PrintAction" class="btn btn-sm btn-success">Print</span></p>
                 <div class="invoicePage PrintAreaContact" style="overflow:auto;">
                 	<div class="container invoiceContainer" style="min-width: 650px;">

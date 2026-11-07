@@ -1,12 +1,12 @@
-@extends(App\Models\General::first()->theme.'.layouts.app')
+@extends(general()->theme.'.layouts.app')
 @section('title')
-<title>Profile Verify | {{App\Models\General::first()->title}} | {{App\Models\General::first()->subtitle}}</title>
+<title>Profile Verify | {{general()->title}} | {{general()->subtitle}}</title>
 @endsection
 @section('SEO')
-<meta name="description" content="{!!App\Models\General::latest()->first()->meta_dsc!!}">
-<meta name="keywords" content="{{App\Models\General::latest()->first()->meta_key}}">
-<meta property="og:title" content="{{App\Models\General::latest()->first()->name}}">
-<meta property="og:description" content="{!!App\Models\General::latest()->first()->meta_dsc!!}">
+<meta name="description" content="{!!general()->meta_dsc!!}">
+<meta name="keywords" content="{{general()->meta_key}}">
+<meta property="og:title" content="{{general()->name}}">
+<meta property="og:description" content="{!!general()->meta_dsc!!}">
 <meta property="og:image" content="{{asset(general()->logo())}}">
 <meta property="og:url" content="{{route('index')}}">
 @endsection
@@ -23,13 +23,13 @@
     <div class="container">
     <div class="row" style="margin:0;">
         <div class="col-lg-3 usersidebardiv">
-            @include(App\Models\General::first()->theme.'.customer.includes.sidebar')
+            @include(general()->theme.'.customer.includes.sidebar')
             
         </div>
         <div class="col-lg-9 usermainbody">
             <div class="usercontent">
                 <div class="myrecentorder">
-                    @include(App\Models\General::first()->theme.'.alerts')
+                    @include(general()->theme.'.alerts')
                     <p style="font-weight: bold;border-bottom: 1px solid #eaeded;padding: 5px 0;">My Profile Update</p>
                     <div>
                        <form method="POST" action="{{route('customer.profileVerifyUpdatePost')}}">

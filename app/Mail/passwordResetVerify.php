@@ -29,7 +29,7 @@ class passwordResetVerify extends Mailable
      */
     public function build()
     {
-        $general = General::first();
+        $general = general();
         $user =$this->data;
         return $this->from($general->mail_from_address,$general->mail_from_name)->subject("Reset Password Code Form ".$general->mail_from_name.".")->view('mails.passwordResetVerify', compact('user','general'));
     }

@@ -671,7 +671,7 @@
             }else if(!t.hasZone){
                 text = '<small>অগ্রিমের পরিমাণ দেখতে আগে ঠিকানার জেলা ও থানা সিলেক্ট করুন</small>';
             }else if(t.advance > 0){
-                text = 'ডেলিভারি চার্জের ' + bn(ck.codPercent) + '% অগ্রিম <b>' + money(t.advance) + '</b> Bangla QR-এ পেমেন্ট করুন'
+                text = 'আপনার ডেলিভারি চার্জ <b>' + bn(t.delivery) + ' টাকা</b>, এর ' + bn(ck.codPercent) + '% অগ্রিম <b>' + money(t.advance) + '</b> Bangla QR-এ পেমেন্ট করুন'
                     + '<br><small>ডেলিভারির সময় দিতে হবে: ' + money(t.due) + '</small>';
             }else{
                 text = 'এই অর্ডারে কোনো অগ্রিম লাগবে না।';

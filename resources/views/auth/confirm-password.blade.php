@@ -32,7 +32,7 @@
                 @if($errors->has('password'))
                     <span style="color:red;display: block;">{{ $errors->first('password') }}</span>
                 @endif
-                @include(App\Models\General::first()->theme.'.alerts')
+                @include(general()->theme.'.alerts')
             </div>
             
 			<label for="verifycode">

@@ -1,0 +1,29 @@
+# Upload folder: nothing here may ever run as code.
+Options -Indexes -ExecCGI
+
+# Turn off PHP for every handler cPanel / LiteSpeed may use
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+RemoveHandler .php .php3 .php4 .php5 .php7 .php8 .phtml .phar .pht .phps .cgi .pl .py .sh
+RemoveType .php .php3 .php4 .php5 .php7 .php8 .phtml .phar .pht .phps
+AddType text/plain .php .php3 .php4 .php5 .php7 .php8 .phtml .phar .pht .phps .cgi .pl .py .sh
+
+# Deny script files, including double extensions like shell.php.jpg
+<FilesMatch "(?i)\.(php\d?|phtml|phar|pht|phps|pgif|inc|shtml?|cgi|pl|py|sh|bash|asp|aspx|jsp|exe|bat)(\.|$)">
+    Require all denied
+</FilesMatch>
+<FilesMatch "(?i)^(\.htaccess|\.htpasswd|\.user\.ini|php\.ini|error_log)$">
+    Require all denied
+</FilesMatch>
+
+# Uploaded SVG/HTML must not run scripts in the browser
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    <FilesMatch "(?i)\.svg$">
+        Header set Content-Security-Policy "script-src 'none'; object-src 'none'"
+    </FilesMatch>
+</IfModule>

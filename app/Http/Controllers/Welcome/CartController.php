@@ -44,11 +44,11 @@ class CartController extends Controller
 
         if(isMobileDevice())
         {
-          $this->device =General::first()->theme.'.carts.';
+          $this->device =general()->theme.'.carts.';
         }
         else
         {
-          $this->device =General::first()->theme.'.carts.';
+          $this->device =general()->theme.'.carts.';
         }
 
     }
@@ -911,7 +911,7 @@ class CartController extends Controller
             return redirect()->route('customer.myOrders');
         }
         $active='';
-        $general =General::first();
+        $general =general();
 
         if($general->online_payment){
             $active ='handcash_payment';
@@ -1039,7 +1039,7 @@ class CartController extends Controller
             Session::flash('error','This Order Invoic Are Not Found');
             return redirect()->route('customer.myOrders');
         }
-        $general =General::first();
+        $general =general();
         $user =Auth::user();
         
         if($type=='wallet'){
@@ -1133,7 +1133,7 @@ class CartController extends Controller
 
 	    	if($cookie)
 	    	{
-    			$general =General::first();
+    			$general =general();
     			$carts = Cart::where('cookie', $cookie)->select(['id','product_id', 'quantity','color','size'])->latest()->paginate(500);
     			
     			$deliveryCharge =0;
@@ -1414,7 +1414,7 @@ class CartController extends Controller
             $item->search_key=$key;
             $item->save();
 
-        $general =General::first();
+        $general =general();
 
         $order->total_price=$item->final_price;
         $order->grand_total =$item->final_price;

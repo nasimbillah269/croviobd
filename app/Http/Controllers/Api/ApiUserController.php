@@ -432,7 +432,7 @@ class ApiUserController extends Controller
         $user->balance +=$transection->amount;
         $user->save();
 
-        $general =General::first();
+        $general =general();
         $general->balacne-=$transection->amount;
         $general->save();
         //Cancel Order Refund Balance To Wallet SMS Send Users

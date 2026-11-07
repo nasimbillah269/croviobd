@@ -391,7 +391,34 @@ class Post extends Model
     {
         
         
-        return (bool) $this->wishlists()->where('cookie', Cookie::get('carts'))->where('type',0)->count();
+        // One query per request for the visitor's whole wishlist, instead of one per product card
+        static $ids = [];
+        $cookie = Cookie::get('carts');
+        $key = (string) $cookie;
+        if(!array_key_exists($key, $ids)){
+            $ids[$key] = WishList::where('cookie', $cookie)->where('type',0)->pluck('product_id')->flip()->all();
+        }
+        return isset($ids[$key][$this->id]);
+    }
+
+    /**
+     * Eager-load everything a product card shows, so a page of N products
+     * runs a handful of queries instead of ~6 per product.
+     * Accepts a collection or paginator of products.
+     */
+    public static function loadCardData($items)
+    {
+        $collection = $items instanceof \Illuminate\Pagination\AbstractPaginator ? $items->getCollection() : $items;
+        if($collection instanceof \Illuminate\Database\Eloquent\Collection && $collection->isNotEmpty()){
+            $collection->loadMissing(['imageFile', 'productReviews', 'productAttibutes']);
+            $collection->loadCount('salesAll');
+        }
+        return $items;
+    }
+
+    public function soldCount()
+    {
+        return $this->sales_all_count ?? $this->salesAll()->count();
     }
     
     public function isCP()

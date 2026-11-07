@@ -1,6 +1,6 @@
 <div style="height: 70px;">
 <p style="margin: 0;font-weight: bold;color: #34364b;font-size: 20px;">
-{{App\Models\General::first()->currency}}
+{{general()->currency}}
 @if($product->skuPrices()->min('new_price') == $product->skuPrices()->max('new_price'))
 {{number_format($product->skuPrices()->min('new_price'),0)}}
 @else

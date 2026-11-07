@@ -44,11 +44,11 @@ class CustomerController extends Controller
 
         if(isMobileDevice())
         {
-          $this->device =General::first()->theme.'.customer.';
+          $this->device =general()->theme.'.customer.';
         }
         else
         {
-          $this->device =General::first()->theme.'.customer.';
+          $this->device =general()->theme.'.customer.';
         }
 
     }
@@ -168,7 +168,7 @@ class CustomerController extends Controller
                 Session::put('email', $data);
             }
             
-            $general = General::first();
+            $general = general();
             if($user){
 
                 $verifycode = mt_rand(100000,999999);
@@ -571,7 +571,7 @@ class CustomerController extends Controller
         $user->balance +=$transection->amount;
         $user->save();
 
-        $general =General::first();
+        $general =general();
         $general->balacne-=$transection->amount;
         $general->save();
         //Cancel Order Refund Balance To Wallet SMS Send Users

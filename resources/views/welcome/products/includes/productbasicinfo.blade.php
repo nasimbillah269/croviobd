@@ -25,13 +25,13 @@
 
        @if($product->hasPriceVariation())
         <div class="hasPriceVariationDiv">
-          @include(App\Models\General::first()->theme.'.products.includes.variationSku')
+          @include(general()->theme.'.products.includes.variationSku')
         </div>
         @else
 
         <p style="margin: 0;font-weight: bold;color: #34364b;font-size: 20px;">
         
-          {{App\Models\General::first()->currency}}  {{number_format($product->offerPrice(),0)}} Only/=
+          {{general()->currency}}  {{number_format($product->offerPrice(),0)}} Only/=
             
             @if($product->discount > 0) 
             <del style="color: #29a7d9;font-size: 16px;"> 
@@ -229,7 +229,7 @@
     </div>
 
   <div class="cartmessage">
-    @include(App\Models\General::first()->theme.'.alerts')
+    @include(general()->theme.'.alerts')
   </div>
   
     

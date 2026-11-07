@@ -11,7 +11,7 @@
     <div class="postsAuto">
         <div class="dataLastPage" data-lastpage="{{$products->lastPage()}}" data-nowpage="1" data-key="{{$search?:''}}" data-url="{{$products->path()}}">
     
-        	@include(App\Models\General::first()->theme.'.products.includes.productsAll6')
+        	@include(general()->theme.'.products.includes.productsAll6')
     
         </div>
     

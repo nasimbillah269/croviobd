@@ -30,7 +30,7 @@ class VerifyCodeMail extends Mailable
      */
     public function build()
     {
-        $general = General::first();
+        $general = general();
         $verifycode =$this->verifycode;
         return $this->from($general->mail_from_address,$general->mail_from_name)->subject('Your Verify OPT Code Form '.$general->title.'.')->view('mails.VerifyCodeMail', compact('general','verifycode'));
     }

@@ -1,12 +1,12 @@
-@extends(App\Models\General::first()->theme.'.layouts.app')
+@extends(general()->theme.'.layouts.app')
 @section('title')
-<title>{{App\Models\General::first()->title}} | {{App\Models\General::first()->subtitle}}</title>
+<title>{{general()->title}} | {{general()->subtitle}}</title>
 @endsection
 @section('SEO')
-<meta name="description" content="{!!App\Models\General::latest()->first()->meta_dsc!!}">
-<meta name="keywords" content="{{App\Models\General::latest()->first()->meta_key}}">
-<meta property="og:title" content="{{App\Models\General::latest()->first()->name}}">
-<meta property="og:description" content="{!!App\Models\General::latest()->first()->meta_dsc!!}">
+<meta name="description" content="{!!general()->meta_dsc!!}">
+<meta name="keywords" content="{{general()->meta_key}}">
+<meta property="og:title" content="{{general()->name}}">
+<meta property="og:description" content="{!!general()->meta_dsc!!}">
 <meta property="og:image" content="{{asset(general()->logo())}}">
 <meta property="og:url" content="{{route('index')}}">
 @endsection
@@ -29,7 +29,7 @@
     
         <div class="viewItemsLists">
     
-            @include(App\Models\General::first()->theme.'.carts.includes.compareItems')
+            @include(general()->theme.'.carts.includes.compareItems')
     
         </div>
     

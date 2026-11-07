@@ -127,7 +127,7 @@ class AuthController extends Controller
             return back();
         }
 
-        $general = General::first();
+        $general = general();
         
         //User Create
         $user =new User();
@@ -249,7 +249,7 @@ class AuthController extends Controller
             return back();
         }
 
-        $general = General::first();
+        $general = general();
         
         if(is_numeric($r->email)){
         
@@ -449,7 +449,7 @@ class AuthController extends Controller
             $verifycode = mt_rand(100000,999999);
              Session::put('verifycode', $verifycode);
             $verifycode=Session::get('verifycode');
-            $general = General::first();
+            $general = general();
             if(is_numeric($data) && $general->sms_status){
                 //Send SMS User
                         $m =$data;
@@ -526,7 +526,7 @@ class AuthController extends Controller
                 Session::put('verifycode', $verifycode);
                 $verifycode=Session::get('verifycode');
                 
-                $general = General::first();
+                $general = general();
                 if(is_numeric($data) && $general->sms_status){
                     //Send SMS User
                             $m =$data;

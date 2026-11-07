@@ -17,7 +17,7 @@ class CheckMiddleware
      */
     public function handle(Request $request, Closure $next)
     {
-        $general=General::first();
+        // settings query removed: nothing here used it
 
         // if($general->commingsoon_mode && url('admin*')!=url()->current()){
         //    return view('index');

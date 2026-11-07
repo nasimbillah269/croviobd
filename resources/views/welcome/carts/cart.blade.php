@@ -169,7 +169,7 @@
         @endif
 
         <div class="productList-table">
-            @include(App\Models\General::first()->theme.'.carts.includes.cartItems')
+            @include(general()->theme.'.carts.includes.cartItems')
         </div>
     </div>
 </div>

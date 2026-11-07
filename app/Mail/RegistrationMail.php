@@ -30,7 +30,7 @@ class RegistrationMail extends Mailable
      */
     public function build()
     {
-        $general =General::first();
+        $general =general();
         
         $user =$this->data;
         

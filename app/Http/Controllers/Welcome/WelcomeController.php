@@ -41,11 +41,11 @@ class WelcomeController extends Controller
 
       if(isMobileDevice())
       {
-          $this->device =General::first()->theme.'.';
+          $this->device =general()->theme.'.';
       }
       else
       {
-          $this->device =General::first()->theme.'.';
+          $this->device =general()->theme.'.';
       }
 
     }
@@ -86,6 +86,7 @@ class WelcomeController extends Controller
         //->where('stock_out_limit','>',1)
         // ->where('quantity','>',0)
         ->paginate(12);
+        Post::loadCardData($latestProducts);
         
         if ($r->ajax()) {
             return response()->json([
@@ -100,6 +101,7 @@ class WelcomeController extends Controller
         //->where('stock_out_limit','>',1)
         // ->where('quantity','>',0)
         ->paginate(12);
+        Post::loadCardData($feturedProducts);
         
         $homeDatas =PostExtra::where('type',4)->where('parent_id',null)->where('status','active')->orderBy('drag','asc')->get();
         
@@ -180,6 +182,7 @@ class WelcomeController extends Controller
         $topPrice = $products->max('final_price');
         // --- Select Columns ---
         $products = $products->paginate(12);
+        Post::loadCardData($products);
         
         if($request->ajax()){
             
@@ -245,6 +248,7 @@ class WelcomeController extends Controller
       ->select(['id','name','final_price','stock_status','quantity','stock_out_limit','slug','weight_unit','weight_amount','addedby_id','created_at','regular_price','discount','discount_type'])
       ->whereDate('created_at','<=',date('Y-m-d'))
       ->paginate(12);
+      Post::loadCardData($relatedProducts);
     
       return view($this->device.'products.productView',compact('product','relatedProducts'));
       
@@ -262,6 +266,7 @@ class WelcomeController extends Controller
                     ->orderByRaw('(regular_price - final_price) / regular_price DESC')
                     ->orderBy('id','desc')
                     ->paginate(16);
+        Post::loadCardData($products);
 
         return view($this->device.'products.offerProducts',compact('products'));
     }

@@ -52,7 +52,7 @@
                              <div class="card-content">
                                  <div class="text-center">
                                      <h5 class="card-text pb-2 white">WE ARE LAUNCHING SOON. </h5>
-                                     <img src="{{asset(App\Models\General::first()->logo())}}" class="img-responsive block width-300 mx-auto" width="300" alt="bg-img" />
+                                     <img src="{{asset(general()->logo())}}" class="img-responsive block width-300 mx-auto" width="300" alt="bg-img" />
                                      <div id="clockFlat" class="card-text getting-started pt-1 mt-2 white d-sm-flex justify-content-center d-inline-block"></div>
                                      <div class="col-12 pt-1">
                                          <p class="card-text lead white">Our website is under Constraction. </p>

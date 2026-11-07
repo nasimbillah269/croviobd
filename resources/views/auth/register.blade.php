@@ -20,7 +20,7 @@
                 <h1>Create account</h1>
                 <p class="au-sub">Already have an account? <a href="{{route('login')}}">Log in</a></p>
 
-                @include(App\Models\General::first()->theme.'.alerts')
+                @include(general()->theme.'.alerts')
 
                 <form action="{{route('register')}}" method="post" class="au-submit-guard">
                     @csrf

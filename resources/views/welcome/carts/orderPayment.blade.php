@@ -1,13 +1,13 @@
-@extends(App\Models\General::first()->theme.'.layouts.app')
+@extends(general()->theme.'.layouts.app')
 @section('title')
-<title>Order Payment - {{App\Models\General::first()->title}} | {{App\Models\General::first()->subtitle}}</title>
+<title>Order Payment - {{general()->title}} | {{general()->subtitle}}</title>
 @endsection
 @section('SEO')
-<meta name="description" content="{!!App\Models\General::latest()->first()->meta_description!!}">
-    <meta name="keywords" content="{{App\Models\General::latest()->first()->meta_keyword}}">
-    <meta property="og:title" content="Order Payment - {{App\Models\General::latest()->first()->title}}">
-    <meta property="og:description" content="{!!App\Models\General::latest()->first()->meta_description!!}">
-    <meta property="og:image" content="{{asset(App\Models\General::first()->logo?:'admin-assets/img/logo.png')}}">
+<meta name="description" content="{!!general()->meta_description!!}">
+    <meta name="keywords" content="{{general()->meta_keyword}}">
+    <meta property="og:title" content="Order Payment - {{general()->title}}">
+    <meta property="og:description" content="{!!general()->meta_description!!}">
+    <meta property="og:image" content="{{asset(general()->logo?:'admin-assets/img/logo.png')}}">
     <meta property="og:url" content="{{route('orderPayment',$order->id)}}">
 @endsection
 @push('css')
@@ -35,19 +35,19 @@
                     
 					
 					
-                    @if(App\Models\General::first()->handcash_payment)
+                    @if(general()->handcash_payment)
 					  <li class="nav-item">
 					    <a class="nav-link {{$active=='handcash_payment'?'active':''}}" data-toggle="pill" href="#hc">Cash on Delivery</a>
 					  </li>
                     @endif
                     
-                    @if(App\Models\General::first()->wallet_payment)
+                    @if(general()->wallet_payment)
 					  <li class="nav-item">
 					    <a class="nav-link {{$active=='wallet_payment'?'active':''}}" data-toggle="pill" href="#balance">Wallet</a>
 					  </li>
 					@endif
                     
-                    @if(App\Models\General::first()->online_payment)
+                    @if(general()->online_payment)
 					  <li class="nav-item">
 					    <a class="nav-link {{$active=='online_payment'?'active':''}}" data-toggle="pill" href="#online">Online Payment</a>
 					  </li>
@@ -67,7 +67,7 @@
 						<div class="tab-pane container {{$active=='wallet_payment'?'bg-white active':'fade'}}" id="balance">
 						    <div class="p-3 bg-white">
 						      	<div class="mybalanetotal">
-						          <span>{{App\Models\General::first()->currency}} {{Auth::user()->balance}}</span>
+						          <span>{{general()->currency}} {{Auth::user()->balance}}</span>
 							      <br>
                                   @if($order->due_amount > Auth::user()->balance)
 							      <button class="btn btn-sm btn-warning">You have no enough balance</button> <br>

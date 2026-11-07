@@ -44,7 +44,7 @@ class CartMiddleware
                 $deliveryCharge = 0;
                 $couponDisc = 0;
                 
-                $wp =General::first();
+                $wp =general();
                 
                 foreach ($carts as $cart) 
                 {

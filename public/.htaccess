@@ -1,9 +1,45 @@
+# ---------------- Security ----------------
+Options -Indexes
+
+# Only Laravel's index.php may run. Any other PHP file dropped here
+# (shell.php, wp-login.php, x.php.jpg ...) is refused.
+<FilesMatch "(?i)^(?!index\.php$).*\.(php\d?|phtml|phar|pht|phps|pgif|inc|shtml?|cgi|pl|py|sh|bash|asp|aspx|jsp)(\.|$)">
+    Require all denied
+</FilesMatch>
+
+# Hidden files, logs, backups and dev files
+<FilesMatch "(?i)(^\.|^error_log$|\.(log|sql|bak|old|orig|swp|ini|env|lock|md|yml|yaml|dist)$|^(composer|package|package-lock|bower)\.json$)">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header unset X-Powered-By
+</IfModule>
+# ------------------------------------------
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
     </IfModule>
 
     RewriteEngine On
+
+    # Block hidden paths (.git, .env ...) except Let's Encrypt / cPanel validation
+    RewriteRule (^|/)\.(?!well-known/) - [F,L]
+
+    # No script may run from any sub-folder (only public/index.php is allowed)
+    RewriteRule ^.+/[^/]*\.(php\d?|phtml|phar|pht|phps|cgi|pl|py|sh)(/|\.|$) - [NC,F,L]
+
+    # Block common exploit query strings
+    RewriteCond %{QUERY_STRING} base64_encode[^(]*\( [NC,OR]
+    RewriteCond %{QUERY_STRING} (<|%3C)[^>]*script[^>]*(>|%3E) [NC,OR]
+    RewriteCond %{QUERY_STRING} (GLOBALS|_REQUEST)(=|\[|%[0-9A-Z]{0,2}) [NC,OR]
+    RewriteCond %{QUERY_STRING} (\.\./|%2e%2e%2f|/etc/passwd|php://|data://|expect://) [NC]
+    RewriteRule ^ - [F,L]
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .

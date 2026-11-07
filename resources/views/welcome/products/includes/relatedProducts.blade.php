@@ -9,7 +9,7 @@
           <div class="owl-carousel owl-theme CategoySlider-owl">
                 @foreach($product->relatedProducts(12) as $product)
                     <div class="item">
-                       @include(App\Models\General::first()->theme.'.products.includes.productCard')
+                       @include(general()->theme.'.products.includes.productCard')
                     </div>
                 @endforeach
             </div>

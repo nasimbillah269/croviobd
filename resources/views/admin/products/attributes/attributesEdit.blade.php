@@ -1,6 +1,6 @@
 @extends('admin.layouts.app')
 @section('title')
-<title>{{App\Models\General::first()->title}} | {{App\Models\General::first()->subtitle}}</title>
+<title>{{general()->title}} | {{general()->subtitle}}</title>
 @endsection
 
 @push('css')

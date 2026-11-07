@@ -26,7 +26,7 @@ class AppServiceProvider extends ServiceProvider
     {
         //
 
-        $general = General::latest()->first();
+        $general = general();
         
 
 

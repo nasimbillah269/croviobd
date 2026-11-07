@@ -4,7 +4,7 @@
 
     @foreach($products as $product)
     <div class="col-6 col-lg-4 col-sm-4" style="padding: 5px;">
-    @include(App\Models\General::first()->theme.'.products.includes.productCard')
+    @include(general()->theme.'.products.includes.productCard')
     </div>
     @endforeach
 

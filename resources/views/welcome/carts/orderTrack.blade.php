@@ -1,12 +1,12 @@
-@extends(App\Models\General::first()->theme.'.layouts.app')
+@extends(general()->theme.'.layouts.app')
 @section('title')
-<title>{{App\Models\General::first()->title}} | {{App\Models\General::first()->subtitle}}</title>
+<title>{{general()->title}} | {{general()->subtitle}}</title>
 @endsection
 @section('SEO')
-<meta name="description" content="{!!App\Models\General::latest()->first()->meta_dsc!!}">
-<meta name="keywords" content="{{App\Models\General::latest()->first()->meta_key}}">
-<meta property="og:title" content="{{App\Models\General::latest()->first()->name}}">
-<meta property="og:description" content="{!!App\Models\General::latest()->first()->meta_dsc!!}">
+<meta name="description" content="{!!general()->meta_dsc!!}">
+<meta name="keywords" content="{{general()->meta_key}}">
+<meta property="og:title" content="{{general()->name}}">
+<meta property="og:description" content="{!!general()->meta_dsc!!}">
 <meta property="og:image" content="{{asset(general()->logo())}}">
 <meta property="og:url" content="{{route('index')}}">
 @endsection
@@ -134,19 +134,19 @@
 
                  <div class="statustimeline">
                     @if($order->payment_method==null)
-                    @include(App\Models\General::first()->theme.'.customer.includes.orderpaydmentpending')
+                    @include(general()->theme.'.customer.includes.orderpaydmentpending')
                     @else
                      
                     @if($order->order_status=='pending')
-                        @include(App\Models\General::first()->theme.'.customer.includes.orderpendingstatus')
+                        @include(general()->theme.'.customer.includes.orderpendingstatus')
                     @elseif($order->order_status=='confirmed')
-                        @include(App\Models\General::first()->theme.'.customer.includes.orderconfirmstatus')
+                        @include(general()->theme.'.customer.includes.orderconfirmstatus')
                     @elseif($order->order_status=='shipped')
-                        @include(App\Models\General::first()->theme.'.customer.includes.ordershipedstatus')
+                        @include(general()->theme.'.customer.includes.ordershipedstatus')
                     @elseif($order->order_status=='delivered')
-                        @include(App\Models\General::first()->theme.'.customer.includes.orderdeliveredstatus')
+                        @include(general()->theme.'.customer.includes.orderdeliveredstatus')
                     @elseif($order->order_status=='cancelled')
-                        @include(App\Models\General::first()->theme.'.customer.includes.ordercancelstatus')
+                        @include(general()->theme.'.customer.includes.ordercancelstatus')
                     @endif
                     @endif
                 </div>

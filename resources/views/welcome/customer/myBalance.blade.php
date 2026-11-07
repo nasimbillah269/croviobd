@@ -1,12 +1,12 @@
-@extends(App\Models\General::first()->theme.'.layouts.app')
+@extends(general()->theme.'.layouts.app')
 @section('title')
-<title>My Balance | {{App\Models\General::first()->title}} | {{App\Models\General::first()->subtitle}}</title>
+<title>My Balance | {{general()->title}} | {{general()->subtitle}}</title>
 @endsection
 @section('SEO')
-<meta name="description" content="{!!App\Models\General::latest()->first()->meta_dsc!!}">
-<meta name="keywords" content="{{App\Models\General::latest()->first()->meta_key}}">
-<meta property="og:title" content="{{App\Models\General::latest()->first()->name}}">
-<meta property="og:description" content="{!!App\Models\General::latest()->first()->meta_dsc!!}">
+<meta name="description" content="{!!general()->meta_dsc!!}">
+<meta name="keywords" content="{{general()->meta_key}}">
+<meta property="og:title" content="{{general()->name}}">
+<meta property="og:description" content="{!!general()->meta_dsc!!}">
 <meta property="og:image" content="{{asset(general()->logo())}}">
 <meta property="og:url" content="{{route('index')}}">
 @endsection
@@ -18,11 +18,11 @@
     <div class="container">
     <div class="row">
         <div class="col-lg-3 usersidebardiv">
-            @include(App\Models\General::first()->theme.'.customer.includes.sidebar')
+            @include(general()->theme.'.customer.includes.sidebar')
         </div>
         <div class="col-lg-9 usermainbody">
 
-            @include(App\Models\General::first()->theme.'.alerts')
+            @include(general()->theme.'.alerts')
 
             <div class="row" style="margin:0 -12px;">
                 <div class="col-md-6" style="padding:0 12px;margin-bottom:24px;">

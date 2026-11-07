@@ -1,10 +1,10 @@
-@extends(App\Models\General::first()->theme.'.layouts.app') @section('title')
-<title>{{App\Models\General::first()->title}} | {{App\Models\General::first()->subtitle}}</title>
+@extends(general()->theme.'.layouts.app') @section('title')
+<title>{{general()->title}} | {{general()->subtitle}}</title>
 @endsection @section('SEO')
-<meta name="description" content="{!!App\Models\General::latest()->first()->meta_dsc!!}" />
-<meta name="keywords" content="{{App\Models\General::latest()->first()->meta_key}}" />
-<meta property="og:title" content="{{App\Models\General::latest()->first()->name}}" />
-<meta property="og:description" content="{!!App\Models\General::latest()->first()->meta_dsc!!}" />
+<meta name="description" content="{!!general()->meta_dsc!!}" />
+<meta name="keywords" content="{{general()->meta_key}}" />
+<meta property="og:title" content="{{general()->name}}" />
+<meta property="og:description" content="{!!general()->meta_dsc!!}" />
 <meta property="og:image" content="{{asset(general()->logo())}}" />
 <meta property="og:url" content="{{route('index')}}" />
 @endsection @push('css')
@@ -57,7 +57,7 @@
 
 <div class="row" style="background: #e7e7e7; margin: 0;">
     <!--<div class="col-md-3 hidemobiletopsidebar" style="padding: 0;">-->
-    <!--@include(App\Models\General::first()->theme.'.layouts/topsidebarmenu')-->
+    <!--@include(general()->theme.'.layouts/topsidebarmenu')-->
     <!--</div>-->
     <div class="col-md-12" style="background: white; border-right: 1px solid #c6c6c6; border-bottom: 1px solid #c6c6c6;">
         <p style="margin: 0; cursor: pointer; padding: 5px;">
@@ -96,10 +96,10 @@
 
 <div class="row" style="margin: 0; margin-top: 10px; padding: 0px;">
     <div class="col-lg-5 col-md-4" style="padding: 5px;">
-        @include(App\Models\General::first()->theme.'.products.includes.productslider')
+        @include(general()->theme.'.products.includes.productslider')
     </div>
     <div class="col-lg-7 col-md-8" style="padding: 5px;">
-        @include(App\Models\General::first()->theme.'.products.includes.productbasicinfo')
+        @include(general()->theme.'.products.includes.productbasicinfo')
     </div>
 </div>
 
@@ -152,7 +152,7 @@
                     </div>
                     <div class="tab-pane fade" id="review" role="tabpanel" aria-labelledby="review-tab">
                         <div class="productnoticelist">
-                            @include(App\Models\General::first()->theme.'.products.includes.realatedReview',['review'=>$review, 'ratings'=>$ratings])
+                            @include(general()->theme.'.products.includes.realatedReview',['review'=>$review, 'ratings'=>$ratings])
                         </div>
                     </div>
                     
@@ -162,15 +162,15 @@
         </div>
 
         <div class="col-lg-4 col-md-4">
-             {{--@include(App\Models\General::first()->theme.'.products.includes.importantNote')--}}
+             {{--@include(general()->theme.'.products.includes.importantNote')--}}
             <div class="reviewsidebar">
-                @include(App\Models\General::first()->theme.'.products.includes.reviewstar',['ratings'=>$ratings, 'avg_rate'=>$avg_rate])
+                @include(general()->theme.'.products.includes.reviewstar',['ratings'=>$ratings, 'avg_rate'=>$avg_rate])
             </div>
            
         </div>
         
     </div>
-    @include(App\Models\General::first()->theme.'.products.includes.relatedProducts')
+    @include(general()->theme.'.products.includes.relatedProducts')
 </div>
 
 </div>

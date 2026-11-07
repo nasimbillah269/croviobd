@@ -30,7 +30,7 @@ class ContactMail extends Mailable
      */
     public function build()
     {
-        $general =General::first();
+        $general =general();
         
         $r =$this->data;
         

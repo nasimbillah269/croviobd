@@ -103,7 +103,7 @@
                                                     {{$order->name?:'Guest'}} {{$order->mobile?'-':''}} {{$order->mobile}}
                                                 </td>
 									    		<td>
-									    		    {{App\Models\General::first()->currency}}
+									    		    {{general()->currency}}
 									    		    {{number_format($order->grand_total)}}
 									                @if($order->payment_status=='partial')
 									                <span class="badge badge-success" style="background:#ff9800;">{{ucfirst($order->payment_status)}}</span>

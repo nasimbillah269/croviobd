@@ -14,8 +14,13 @@ function new_slug($text='')
   return Str::slug($text);
 }
 
-function general(){
-  return $general =General::first();
+// Site settings are read hundreds of times per page; load the row once per request.
+function general($fresh = false){
+  static $general = null;
+  if($fresh || $general === null){
+    $general = General::first();
+  }
+  return $general;
 }
 
 function assetLink(){

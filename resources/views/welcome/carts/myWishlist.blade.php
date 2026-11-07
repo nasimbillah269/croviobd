@@ -15,7 +15,7 @@
 <div class="wl-page">
     <div class="container">
         <div class="viewItemsLists">
-            @include(App\Models\General::first()->theme.'.carts.includes.wishlistItems')
+            @include(general()->theme.'.carts.includes.wishlistItems')
         </div>
     </div>
 </div>

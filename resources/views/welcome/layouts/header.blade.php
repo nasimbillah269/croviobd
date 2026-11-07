@@ -60,7 +60,7 @@
                         <!--</li>-->
                       
                         <li class="HeaderCartItems">
-                            @include(App\Models\General::first()->theme.'.carts.includes.headerCartBox')
+                            @include(general()->theme.'.carts.includes.headerCartBox')
                         </li>
 
                         <li>
@@ -82,7 +82,7 @@
                     
                     <span class="HeaderCartItems2">
                     
-                    @include(App\Models\General::first()->theme.'.carts.includes.headerCartBox2')
+                    @include(general()->theme.'.carts.includes.headerCartBox2')
                     </span>
                 </div>
             </div>
@@ -109,7 +109,7 @@
                 </a>
                 <div class="mobileCartIcon">
                     <span class="HeaderCartItems2 extra">
-                    @include(App\Models\General::first()->theme.'.carts.includes.headerCartBox2')
+                    @include(general()->theme.'.carts.includes.headerCartBox2')
                     </span>
                 </div>
             </div>

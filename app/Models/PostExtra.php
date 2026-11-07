@@ -138,7 +138,7 @@ class PostExtra extends Model
          }
          
          
-         return $products;
+         return Post::loadCardData($products);
      }
      
      public function homeDataIds(){

@@ -59,7 +59,7 @@
         <div class="ratings">
             <span>
                 <i class="fa fa-star" aria-hidden="true"></i>
-                {{$product->productRating()}}/5 ({{$product->reviewTotal()}}) • {{$product->salesAll()->count()}} sold
+                {{$product->productRating()}}/5 ({{$product->reviewTotal()}}) • {{$product->soldCount()}} sold
             </span>
         </div>
         <div class="cartButton">

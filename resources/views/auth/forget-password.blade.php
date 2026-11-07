@@ -24,7 +24,7 @@
 
 		<form  method="POST" action="{{route('forgotPassword')}}">
             @csrf
-            @include(App\Models\General::first()->theme.'.alerts')
+            @include(general()->theme.'.alerts')
             
 			<label for="email">
 				 Email*

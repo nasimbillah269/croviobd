@@ -43,7 +43,7 @@
 <!--    <div>-->
 
 <!--        <div class="allcartsdiv">-->
-<!--            @include(App\Models\General::first()->theme.'.carts.includes.cartItemsForSidebarCart')-->
+<!--            @include(general()->theme.'.carts.includes.cartItemsForSidebarCart')-->
 <!--        </div>-->
 <!--    </div>-->
 <!--</div>-->
