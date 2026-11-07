@@ -22,7 +22,6 @@ use App\Mail\RegistrationMail;
 use App\Mail\passwordResetVerify;
 use App\Mail\VerifyCodeMail;
 use Illuminate\Http\Request;
-use MikeMcLin\WpPassword\Facades\WpPassword;
 
 class AuthController extends Controller
 {

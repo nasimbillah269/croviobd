@@ -74,7 +74,7 @@ function menu($location=null){
   return Attribute::latest()->where('type',8)->where('status','active')->where('location',$location)->first();
 }
 
-function hasCart($cookie=null,$id){
+function hasCart($cookie,$id){
     
     $cart=null;
     if($cookie){
